@@ -491,6 +491,7 @@ class Singbox
             'server_port' => $server['port'],
             'username' => $username,
             'password' => $username,
+            'domain_resolver' => 'local',
             'tls' => [
                 'enabled' => true,
                 'server_name' => $tlsSettings['server_name'] ?? $server['host'],
