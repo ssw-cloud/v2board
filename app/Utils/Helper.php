@@ -480,7 +480,9 @@ class Helper
     public static function buildNaiveV2rayNUri($uuid, $server)
     {
         $tlsSettings = $server['tls_settings'] ?? [];
-        $params = [];
+        $params = [
+            'security' => 'tls',
+        ];
         if (!empty($tlsSettings['server_name'])) {
             $params['sni'] = $tlsSettings['server_name'];
         }
