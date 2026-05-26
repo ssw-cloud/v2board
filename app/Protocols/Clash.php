@@ -22,10 +22,6 @@ class Clash
         $servers = $this->servers;
         $user = $this->user;
         $appName = config('v2board.app_name', 'V2Board');
-        header("subscription-userinfo: upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
-        header('profile-update-interval: 24');
-        header("content-disposition:attachment;filename*=UTF-8''".rawurlencode($appName));
-        header("profile-web-page-url:" . config('v2board.app_url'));
         $defaultConfig = base_path() . '/resources/rules/default.clash.yaml';
         $customConfig = base_path() . '/resources/rules/custom.clash.yaml';
         if (\File::exists($customConfig)) {
@@ -92,7 +88,13 @@ class Clash
 
         $yaml = Yaml::dump($config, 2, 4, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE);
         $yaml = str_replace('$app_name', config('v2board.app_name', 'V2Board'), $yaml);
-        return $yaml;
+        return response($yaml, 200)
+            ->header('Content-Type', 'text/yaml; charset=utf-8')
+            ->header('Content-Length', strlen($yaml))
+            ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}")
+            ->header('profile-update-interval', '24')
+            ->header('content-disposition', "attachment;filename*=UTF-8''".rawurlencode($appName))
+            ->header('profile-web-page-url', config('v2board.app_url'));
     }
 
     public static function buildShadowsocks($uuid, $server)

@@ -507,9 +507,9 @@ class Helper
 
         $name = self::encodeURIComponent($server['name']);
         if (empty($params)) {
-            return self::buildSimpleUriString('https', "{$uuid}:{$uuid}", $server, $name);
+            return self::buildSimpleUriString('http2', "{$uuid}:{$uuid}", $server, $name);
         }
-        return self::buildUriString('https', "{$uuid}:{$uuid}", $server, $name, $params);
+        return self::buildUriString('http2', "{$uuid}:{$uuid}", $server, $name, $params);
     }
 
     /**

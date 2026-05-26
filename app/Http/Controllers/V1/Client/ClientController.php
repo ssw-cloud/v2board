@@ -16,7 +16,8 @@ class ClientController extends Controller
 {
     public function subscribe(Request $request)
     {
-        $flag = $request->input('flag')
+        $requestedFlag = $request->input('flag');
+        $flag = $requestedFlag
             ?? ($_SERVER['HTTP_USER_AGENT'] ?? '');
         $flag = strtolower($flag);
         $user = $request->user;
@@ -25,6 +26,10 @@ class ClientController extends Controller
         if ($userService->isAvailable($user)) {
             $serverService = new ServerService();
             $servers = $serverService->getAvailableServers($user);
+            if (!$requestedFlag && strpos($flag, 'nekobox') !== false) {
+                $class = new General($user, $servers);
+                return $class->handle();
+            }
             if($flag) {
                 if (!strpos($flag, 'sing')) {
                     $this->setSubscribeInfoToServers($servers, $user);
