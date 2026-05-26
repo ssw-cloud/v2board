@@ -474,8 +474,7 @@ class Helper
 
     public static function buildNaiveUri($uuid, $server)
     {
-        $name = self::encodeURIComponent($server['name']);
-        return self::buildSimpleUriString('https', "{$uuid}:{$uuid}", $server, $name);
+        return self::buildNaiveV2rayNUri($uuid, $server);
     }
 
     public static function buildNaiveV2rayNUri($uuid, $server)
