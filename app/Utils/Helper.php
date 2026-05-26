@@ -191,6 +191,14 @@ class Helper
         return "{$scheme}://{$auth}@{$host}:{$port}?{$query}#{$name}\r\n";
     }
 
+    public static function buildSimpleUriString($scheme, $auth, $server, $name)
+    {
+        $host = self::formatHost($server['host']);
+        $port = $server['port'];
+
+        return "{$scheme}://{$auth}@{$host}:{$port}#{$name}\r\n";
+    }
+
     public static function formatHost($host)
     {
         return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? "[$host]" : $host;
@@ -462,6 +470,12 @@ class Helper
         }
         $query = http_build_query($config);
         return "anytls://{$password}@{$remote}:{$port}/?{$query}#{$name}\r\n";
+    }
+
+    public static function buildNaiveUri($uuid, $server)
+    {
+        $name = self::encodeURIComponent($server['name']);
+        return self::buildSimpleUriString('https', "{$uuid}:{$uuid}", $server, $name);
     }
 
     /**

@@ -21,7 +21,7 @@ class V2nodeController extends Controller
             'listen_ip' => 'nullable',
             'port' => 'required',
             'server_port' => 'required',
-            'protocol' => 'required|in:shadowsocks,vmess,vless,trojan,tuic,hysteria2,anytls',
+            'protocol' => 'required|in:shadowsocks,vmess,vless,trojan,tuic,hysteria2,anytls,naive',
             'tls' => 'required|in:0,1,2',
             'tls_settings' => 'nullable|array',
             'flow' => 'nullable|in:xtls-rprx-vision',
@@ -47,8 +47,25 @@ class V2nodeController extends Controller
         if ($params['protocol'] == 'anytls' && $params['tls'] === 0) {
             $params['tls'] = 1;
         }
-        if (in_array($params['protocol'], ['hysteria2', 'trojan', 'tuic'])) {
+        if (in_array($params['protocol'], ['hysteria2', 'trojan', 'tuic', 'naive'])) {
             $params['tls'] = 1;
+        }
+        if ($params['protocol'] === 'naive') {
+            $params['network'] = 'tcp';
+            $params['network_settings'] = null;
+            $params['flow'] = null;
+            $params['encryption'] = null;
+            $params['encryption_settings'] = null;
+            $params['disable_sni'] = 0;
+            $params['udp_relay_mode'] = null;
+            $params['zero_rtt_handshake'] = 0;
+            $params['congestion_control'] = null;
+            $params['cipher'] = null;
+            $params['up_mbps'] = 0;
+            $params['down_mbps'] = 0;
+            $params['obfs'] = null;
+            $params['obfs_password'] = null;
+            $params['padding_scheme'] = null;
         }
         if (isset($params['tls']) && (int)$params['tls'] === 2) {
             $keyPair = SodiumCompat::crypto_box_keypair();

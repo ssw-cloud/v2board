@@ -394,12 +394,21 @@ class ServerService
             $nodeId = (int) $v['id'];
             $apiHostArg = escapeshellarg((string) $apiHost);
             $apiKeyArg = escapeshellarg((string) $apiKey);
-            $servers[$k]['install_command'] = sprintf(
-                'wget -N https://raw.githubusercontent.com/wyx2685/v2node/master/script/install.sh && bash install.sh --api-host %s --node-id %d --api-key %s',
-                $apiHostArg,
-                $nodeId,
-                $apiKeyArg
-            );
+            if (($v['protocol'] ?? null) === 'naive') {
+                $servers[$k]['install_command'] = sprintf(
+                    'bash <(curl -fsSL https://raw.githubusercontent.com/ssw-cloud/v2naive/main/script/install.sh) --api-host %s --node-id %d --api-key %s',
+                    $apiHostArg,
+                    $nodeId,
+                    $apiKeyArg
+                );
+            } else {
+                $servers[$k]['install_command'] = sprintf(
+                    'wget -N https://raw.githubusercontent.com/wyx2685/v2node/master/script/install.sh && bash install.sh --api-host %s --node-id %d --api-key %s',
+                    $apiHostArg,
+                    $nodeId,
+                    $apiKeyArg
+                );
+            }
         }
         return $servers;
     }

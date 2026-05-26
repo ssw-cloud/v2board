@@ -75,6 +75,10 @@ class Singbox
                     $anytlsConfig = $this->buildAnyTLS($this->user['uuid'], $item);
                     $proxies[] = $anytlsConfig;
                     break;
+                case 'naive':
+                    $naiveConfig = $this->buildNaive($this->user['uuid'], $item);
+                    $proxies[] = $naiveConfig;
+                    break;
                 case 'hysteria':
                     $hysteriaConfig = $this->buildHysteria($this->user['uuid'], $item, $this->user);
                     $proxies[] = $hysteriaConfig;
@@ -475,6 +479,33 @@ class Singbox
         }
 
         return $array;
+    }
+
+    protected function buildNaive($username, $server)
+    {
+        $tlsSettings = $server['tls_settings'] ?? [];
+        return [
+            'tag' => $server['name'],
+            'type' => 'naive',
+            'server' => $server['host'],
+            'server_port' => $server['port'],
+            'username' => $username,
+            'password' => $username,
+            'network' => 'tcp',
+            'tls' => [
+                'enabled' => true,
+                'server_name' => $tlsSettings['server_name'] ?? $server['host'],
+                'insecure' => ($tlsSettings['allow_insecure'] ?? 0) == 1 ? true : false,
+                'alpn' => [
+                    'h2',
+                    'http/1.1',
+                ],
+                'utls' => [
+                    'enabled' => true,
+                    'fingerprint' => $tlsSettings['fingerprint'] ?? 'chrome',
+                ],
+            ],
+        ];
     }
 
     protected function buildHysteria2($password, $server)

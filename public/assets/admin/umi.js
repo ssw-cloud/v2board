@@ -106159,7 +106159,7 @@
                 }
             }
             formChange(e, t) {
-                if (e === "protocol" && ["anytls", "hysteria2", "trojan", "tuic"].includes(t)) {
+                if (e === "protocol" && ["anytls", "hysteria2", "trojan", "tuic", "naive"].includes(t)) {
                     this.setState({
                         server: I()({}, this.state.server, {
                             protocol: t,
@@ -106318,13 +106318,16 @@
                 }, "VLess"), y.a.createElement(N["a"].Option, {
                     key: 6,
                     value: "vmess"
-                }, "VMess"))), e.protocol != null && e.protocol != "shadowsocks" && y.a.createElement("div", {
+                }, "VMess"), y.a.createElement(N["a"].Option, {
+                    key: 7,
+                    value: "naive"
+                }, "Naive"))), e.protocol != null && e.protocol != "shadowsocks" && y.a.createElement("div", {
                     className: "form-group col-md-6 col-xs-12"
-                }, y.a.createElement("label", null, "\u5b89\u5168\u6027 ", (parseInt(e.tls) != 0 || e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic") && y.a.createElement("a", {
+                }, y.a.createElement("label", null, "\u5b89\u5168\u6027 ", (parseInt(e.tls) != 0 || e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic" || e.protocol == "naive") && y.a.createElement("a", {
                     href: "javascript:void(0);",
                     onClick: ()=>this.showChildDrawer("\u7f16\u8f91\u5b89\u5168\u6027\u914d\u7f6e", "tls_settings")
                 }, "\u7f16\u8f91\u914d\u7f6e")), y.a.createElement(N["a"], {
-                    value: parseInt(e.tls) || (e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic" ? 1 : 0),
+                    value: parseInt(e.tls) || (e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic" || e.protocol == "naive" ? 1 : 0),
                     style: {
                         width: "100%"
                     },
@@ -106356,7 +106359,7 @@
                     value: "tcp"
                 }, "TCP"), y.a.createElement(N["a"].Option, {
                     value: "http"
-                }, "HTTP\u4f2a\u88c5")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && y.a.createElement("div", {
+                }, "HTTP\u4f2a\u88c5")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && e.protocol != "naive" && y.a.createElement("div", {
                     className: "row"
                 }, y.a.createElement("div", {
                     className: "form-group col-md-12 col-xs-12"
