@@ -53,6 +53,7 @@ class ServerController extends Controller
     public function config(Request $request)
     {
         $response = [
+            'host' => $this->nodeInfo->host,
             'listen_ip' => $this->nodeInfo->listen_ip,
             'server_port' => $this->nodeInfo->server_port,
             'network' => $this->nodeInfo->network,
