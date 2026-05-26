@@ -502,6 +502,26 @@ class Helper
         return self::buildUriString('naive+https', "{$uuid}:{$uuid}", $server, $name, $params);
     }
 
+    public static function buildNaiveShadowrocketUri($uuid, $server)
+    {
+        $tlsSettings = $server['tls_settings'] ?? [];
+        $params = [];
+        if (!empty($tlsSettings['server_name'])) {
+            $params['sni'] = $tlsSettings['server_name'];
+        }
+        $allowInsecure = (int)($tlsSettings['allow_insecure'] ?? 0);
+        if ($allowInsecure === 1) {
+            $params['insecure'] = 1;
+            $params['allowInsecure'] = 1;
+        }
+
+        $name = self::encodeURIComponent($server['name']);
+        if (empty($params)) {
+            return self::buildSimpleUriString('naive+https', "{$uuid}:{$uuid}", $server, $name);
+        }
+        return self::buildUriString('naive+https', "{$uuid}:{$uuid}", $server, $name, $params);
+    }
+
     /**
      * Generate ECH (Encrypted Client Hello) key pair for sing-box.
      * Produces ech_key (MarshalECHKeys format, for server inbound)
