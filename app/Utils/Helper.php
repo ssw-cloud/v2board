@@ -486,15 +486,6 @@ class Helper
         if (!empty($tlsSettings['server_name'])) {
             $params['sni'] = $tlsSettings['server_name'];
         }
-        if (array_key_exists('allow_insecure', $tlsSettings)) {
-            $allowInsecure = (int) $tlsSettings['allow_insecure'];
-            $params['insecure'] = $allowInsecure;
-            $params['allowInsecure'] = $allowInsecure;
-        }
-        if (!empty($tlsSettings['fingerprint'])) {
-            $params['fp'] = $tlsSettings['fingerprint'];
-        }
-
         $name = self::encodeURIComponent($server['name']);
         if (empty($params)) {
             return self::buildSimpleUriString('naive+https', "{$uuid}:{$uuid}", $server, $name);
