@@ -491,19 +491,10 @@ class Singbox
             'server_port' => $server['port'],
             'username' => $username,
             'password' => $username,
-            'network' => 'tcp',
             'tls' => [
                 'enabled' => true,
                 'server_name' => $tlsSettings['server_name'] ?? $server['host'],
                 'insecure' => ($tlsSettings['allow_insecure'] ?? 0) == 1 ? true : false,
-                'alpn' => [
-                    'h2',
-                    'http/1.1',
-                ],
-                'utls' => [
-                    'enabled' => true,
-                    'fingerprint' => $tlsSettings['fingerprint'] ?? 'chrome',
-                ],
             ],
         ];
     }
