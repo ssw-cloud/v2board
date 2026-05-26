@@ -57,10 +57,6 @@ class ClashVerge
                     $proxy[] = self::buildTrojan($user['uuid'], $item);
                     $proxies[] = $item['name'];
                     break;
-                case 'naive':
-                    $proxy[] = self::buildNaive($user['uuid'], $item);
-                    $proxies[] = $item['name'];
-                    break;
                 case 'tuic':
                     $proxy[] = self::buildTuic($user['uuid'], $item);
                     $proxies[] = $item['name'];
@@ -376,32 +372,6 @@ class ClashVerge
                 ];
             }
         }
-        return $array;
-    }
-
-    public static function buildNaive($username, $server)
-    {
-        $tlsSettings = $server['tlsSettings'] ?? ($server['tls_settings'] ?? []);
-        $array = [
-            'name' => $server['name'],
-            'type' => 'http',
-            'server' => $server['host'],
-            'port' => (int)$server['port'],
-            'username' => $username,
-            'password' => $username,
-            'tls' => true,
-        ];
-
-        $sni = $tlsSettings['server_name'] ?? ($tlsSettings['serverName'] ?? null);
-        if (!empty($sni)) {
-            $array['sni'] = $sni;
-        }
-
-        if (isset($tlsSettings['allow_insecure']) || isset($tlsSettings['allowInsecure'])) {
-            $allowInsecure = $tlsSettings['allow_insecure'] ?? $tlsSettings['allowInsecure'] ?? 0;
-            $array['skip-cert-verify'] = (int)$allowInsecure === 1;
-        }
-
         return $array;
     }
 
