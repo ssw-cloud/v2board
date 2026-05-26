@@ -99,6 +99,20 @@ class V2nodeController extends Controller
                 }
             }
         }
+        if (isset($params['tls_settings']) && is_array($params['tls_settings'])) {
+            foreach (['reject_unknown_sni', 'allow_insecure'] as $tlsFlagKey) {
+                if (!array_key_exists($tlsFlagKey, $params['tls_settings'])) {
+                    continue;
+                }
+                $rawTlsFlagValue = $params['tls_settings'][$tlsFlagKey];
+                $normalizedTlsFlagValue = filter_var($rawTlsFlagValue, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                if ($normalizedTlsFlagValue !== null) {
+                    $params['tls_settings'][$tlsFlagKey] = $normalizedTlsFlagValue ? 1 : 0;
+                    continue;
+                }
+                $params['tls_settings'][$tlsFlagKey] = (int) $rawTlsFlagValue;
+            }
+        }
         if (isset($params['network_settings'])) {
             $ns = $params['network_settings'];
             if (isset($ns['acceptProxyProtocol'])) {
