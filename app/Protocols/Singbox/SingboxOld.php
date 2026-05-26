@@ -70,6 +70,10 @@ class SingboxOld
                 $tuicConfig = $this->buildTuic($this->user['uuid'], $item);
                 $proxies[] = $tuicConfig;
             }
+            if ($item['type'] === 'naive') {
+                $naiveConfig = $this->buildNaive($this->user['uuid'], $item);
+                $proxies[] = $naiveConfig;
+            }
             if ($item['type'] === 'hysteria') {
                 $hysteriaConfig = $this->buildHysteria($this->user['uuid'], $item, $this->user);
                 $proxies[] = $hysteriaConfig;
@@ -301,6 +305,29 @@ class SingboxOld
         $array['tls']['server_name'] = $server['server_name'] ?? ($tlsSettings['server_name'] ?? '');
 
         return $array;
+    }
+
+    protected function buildNaive($username, $server)
+    {
+        $tlsSettings = $server['tls_settings'] ?? [];
+        return [
+            'tag' => $server['name'],
+            'type' => 'naive',
+            'server' => $server['host'],
+            'server_port' => $server['port'],
+            'username' => $username,
+            'password' => $username,
+            'network' => 'tcp',
+            'tls' => [
+                'enabled' => true,
+                'server_name' => $tlsSettings['server_name'] ?? $server['host'],
+                'insecure' => ($tlsSettings['allow_insecure'] ?? 0) == 1 ? true : false,
+                'alpn' => [
+                    'h2',
+                    'http/1.1',
+                ],
+            ],
+        ];
     }
 
     protected function buildHysteria($password, $server, $user)

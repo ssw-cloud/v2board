@@ -75,6 +75,10 @@ class Singbox
                     $anytlsConfig = $this->buildAnyTLS($this->user['uuid'], $item);
                     $proxies[] = $anytlsConfig;
                     break;
+                case 'naive':
+                    $naiveConfig = $this->buildNaive($this->user['uuid'], $item);
+                    $proxies[] = $naiveConfig;
+                    break;
                 case 'hysteria':
                     $hysteriaConfig = $this->buildHysteria($this->user['uuid'], $item, $this->user);
                     $proxies[] = $hysteriaConfig;
@@ -161,6 +165,19 @@ class Singbox
             $tlsSettings = $server['tls_settings'] ?? $server['tlsSettings'] ?? [];
             $tlsConfig['insecure'] = ($tlsSettings['allow_insecure'] ?? ($tlsSettings['allowInsecure'] ?? 0)) == 1 ? true : false;
             $tlsConfig['server_name'] = $tlsSettings['server_name'] ?? $tlsSettings['serverName'] ?? '';
+            if (!empty($tlsSettings['ech'])) {
+                if ($tlsSettings['ech'] === 'cloudflare') {
+                    $tlsConfig['ech'] = [
+                        'enabled' => true,
+                        'query_server_name' => 'cloudflare-ech.com'
+                    ];
+                } elseif ($tlsSettings['ech'] === 'custom' && !empty($tlsSettings['ech_config'])) {
+                    $tlsConfig['ech'] = [
+                        'enabled' => true,
+                        'config' => is_array($tlsSettings['ech_config']) ? $tlsSettings['ech_config'] : [$tlsSettings['ech_config']]
+                    ];
+                }
+            }
             $array['tls'] = $tlsConfig;
         }
         if ($server['network'] === 'tcp') {
@@ -220,6 +237,19 @@ class Singbox
                     "enabled" => true,
                     "fingerprint" => $fingerprints
                 ];
+                if (!empty($tlsSettings['ech'])) {
+                    if ($tlsSettings['ech'] === 'cloudflare') {
+                        $tlsConfig['ech'] = [
+                            'enabled' => true,
+                            'query_server_name' => 'cloudflare-ech.com'
+                        ];
+                    } elseif ($tlsSettings['ech'] === 'custom' && !empty($tlsSettings['ech_config'])) {
+                        $tlsConfig['ech'] = [
+                            'enabled' => true,
+                            'config' => is_array($tlsSettings['ech_config']) ? $tlsSettings['ech_config'] : [$tlsSettings['ech_config']]
+                        ];
+                    }
+                }
             }
             $array['tls'] = $tlsConfig;
         }
@@ -262,11 +292,25 @@ class Singbox
         $array['domain_resolver'] = 'local';
 
         $tlsSettings = $server['tls_settings'] ?? [];
-        $array['tls'] = [
+        $tlsConfig = [
             'enabled' => true,
             'insecure' => ($server['allow_insecure'] ?? ($tlsSettings['allow_insecure'] ?? 0)) == 1 ? true : false,
             'server_name' => $server['server_name'] ?? ($tlsSettings['server_name'] ?? '')
         ];
+        if (!empty($tlsSettings['ech'])) {
+            if ($tlsSettings['ech'] === 'cloudflare') {
+                $tlsConfig['ech'] = [
+                    'enabled' => true,
+                    'query_server_name' => 'cloudflare-ech.com'
+                ];
+            } elseif ($tlsSettings['ech'] === 'custom' && !empty($tlsSettings['ech_config'])) {
+                $tlsConfig['ech'] = [
+                    'enabled' => true,
+                    'config' => is_array($tlsSettings['ech_config']) ? $tlsSettings['ech_config'] : [$tlsSettings['ech_config']]
+                ];
+            }
+        }
+        $array['tls'] = $tlsConfig;
 
         if(isset($server['network']) && in_array($server['network'], ["grpc", "ws"])){
             $array['transport']['type'] = $server['network'];
@@ -435,6 +479,33 @@ class Singbox
         }
 
         return $array;
+    }
+
+    protected function buildNaive($username, $server)
+    {
+        $tlsSettings = $server['tls_settings'] ?? [];
+        return [
+            'tag' => $server['name'],
+            'type' => 'naive',
+            'server' => $server['host'],
+            'server_port' => $server['port'],
+            'username' => $username,
+            'password' => $username,
+            'network' => 'tcp',
+            'tls' => [
+                'enabled' => true,
+                'server_name' => $tlsSettings['server_name'] ?? $server['host'],
+                'insecure' => ($tlsSettings['allow_insecure'] ?? 0) == 1 ? true : false,
+                'alpn' => [
+                    'h2',
+                    'http/1.1',
+                ],
+                'utls' => [
+                    'enabled' => true,
+                    'fingerprint' => $tlsSettings['fingerprint'] ?? 'chrome',
+                ],
+            ],
+        ];
     }
 
     protected function buildHysteria2($password, $server)

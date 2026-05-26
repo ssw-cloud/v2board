@@ -22,7 +22,11 @@ class V2rayN
         $uri = '';
 
         foreach ($this->servers as $server) {
-            $uri .= Helper::buildUri($this->user['uuid'], $server);
+            if (($server['type'] ?? null) === 'v2node' && ($server['protocol'] ?? null) === 'naive') {
+                $uri .= Helper::buildNaiveV2rayNUri($this->user['uuid'], $server);
+            } else {
+                $uri .= Helper::buildUri($this->user['uuid'], $server);
+            }
         }
         return base64_encode($uri);
     }

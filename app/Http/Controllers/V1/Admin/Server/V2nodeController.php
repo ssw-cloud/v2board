@@ -21,7 +21,7 @@ class V2nodeController extends Controller
             'listen_ip' => 'nullable',
             'port' => 'required',
             'server_port' => 'required',
-            'protocol' => 'required|in:shadowsocks,vmess,vless,trojan,tuic,hysteria2,anytls',
+            'protocol' => 'required|in:shadowsocks,vmess,vless,trojan,tuic,hysteria2,anytls,naive',
             'tls' => 'required|in:0,1,2',
             'tls_settings' => 'nullable|array',
             'flow' => 'nullable|in:xtls-rprx-vision',
@@ -47,8 +47,25 @@ class V2nodeController extends Controller
         if ($params['protocol'] == 'anytls' && $params['tls'] === 0) {
             $params['tls'] = 1;
         }
-        if (in_array($params['protocol'], ['hysteria2', 'trojan', 'tuic'])) {
+        if (in_array($params['protocol'], ['hysteria2', 'trojan', 'tuic', 'naive'])) {
             $params['tls'] = 1;
+        }
+        if ($params['protocol'] === 'naive') {
+            $params['network'] = 'tcp';
+            $params['network_settings'] = null;
+            $params['flow'] = null;
+            $params['encryption'] = null;
+            $params['encryption_settings'] = null;
+            $params['disable_sni'] = 0;
+            $params['udp_relay_mode'] = null;
+            $params['zero_rtt_handshake'] = 0;
+            $params['congestion_control'] = null;
+            $params['cipher'] = null;
+            $params['up_mbps'] = 0;
+            $params['down_mbps'] = 0;
+            $params['obfs'] = null;
+            $params['obfs_password'] = null;
+            $params['padding_scheme'] = null;
         }
         if (isset($params['tls']) && (int)$params['tls'] === 2) {
             $keyPair = SodiumCompat::crypto_box_keypair();
@@ -66,6 +83,36 @@ class V2nodeController extends Controller
                 $params['tls_settings']['server_port'] = "443";
             }
         }
+        if (isset($params['tls_settings']) && !empty($params['tls_settings']['ech']) && $params['tls_settings']['ech'] === 'custom') {
+            if (empty($params['tls_settings']['ech_server_name'])) {
+                $params['tls_settings']['ech'] = '';
+            } else {
+                $outerSni = $params['tls_settings']['ech_server_name'];
+                if (empty($params['tls_settings']['ech_key']) || empty($params['tls_settings']['ech_config'])) {
+                    $echPair = Helper::generateEchKeyPair($outerSni);
+                    if (empty($params['tls_settings']['ech_key'])) {
+                        $params['tls_settings']['ech_key'] = $echPair['ech_key'];
+                    }
+                    if (empty($params['tls_settings']['ech_config'])) {
+                        $params['tls_settings']['ech_config'] = $echPair['ech_config'];
+                    }
+                }
+            }
+        }
+        if (isset($params['tls_settings']) && is_array($params['tls_settings'])) {
+            foreach (['reject_unknown_sni', 'allow_insecure'] as $tlsFlagKey) {
+                if (!array_key_exists($tlsFlagKey, $params['tls_settings'])) {
+                    continue;
+                }
+                $rawTlsFlagValue = $params['tls_settings'][$tlsFlagKey];
+                $normalizedTlsFlagValue = filter_var($rawTlsFlagValue, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                if ($normalizedTlsFlagValue !== null) {
+                    $params['tls_settings'][$tlsFlagKey] = $normalizedTlsFlagValue ? 1 : 0;
+                    continue;
+                }
+                $params['tls_settings'][$tlsFlagKey] = (int) $rawTlsFlagValue;
+            }
+        }
         if (isset($params['network_settings'])) {
             $ns = $params['network_settings'];
             if (isset($ns['acceptProxyProtocol'])) {
@@ -80,6 +127,9 @@ class V2nodeController extends Controller
             $ns = $params['network_settings'];
             if (isset($ns['extra']) && is_array($ns['extra'])) {
                 $extra = $ns['extra'];
+                if (isset($extra['xPaddingObfsMode'])) {
+                    $extra['xPaddingObfsMode'] = filter_var($extra['xPaddingObfsMode'], FILTER_VALIDATE_BOOLEAN);
+                }
                 if (isset($extra['noGRPCHeader'])) {
                     $extra['noGRPCHeader'] = filter_var($extra['noGRPCHeader'], FILTER_VALIDATE_BOOLEAN);
                 }
