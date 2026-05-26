@@ -499,16 +499,17 @@ class Helper
         $params = [];
         if (!empty($tlsSettings['server_name'])) {
             $params['sni'] = $tlsSettings['server_name'];
+            $params['peer'] = $tlsSettings['server_name'];
         }
         if (($tlsSettings['allow_insecure'] ?? 0) == 1) {
-            $params['insecure'] = 1;
+            $params['allowInsecure'] = 1;
         }
 
         $name = self::encodeURIComponent($server['name']);
         if (empty($params)) {
-            return self::buildSimpleUriString('naive+https', "{$uuid}:{$uuid}", $server, $name);
+            return self::buildSimpleUriString('https', "{$uuid}:{$uuid}", $server, $name);
         }
-        return self::buildUriString('naive+https', "{$uuid}:{$uuid}", $server, $name, $params);
+        return self::buildUriString('https', "{$uuid}:{$uuid}", $server, $name, $params);
     }
 
     /**
