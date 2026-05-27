@@ -60,7 +60,7 @@ class ServerController extends Controller
             'network_settings' => $this->nodeInfo->network_settings,
             'protocol' => $this->nodeInfo->protocol,
             'tls' => $this->nodeInfo->tls,
-            'tls_settings' => $this->nodeInfo->tls_settings,
+            'tls_settings' => $this->formatTlsSettingsForNode($this->nodeInfo->tls_settings),
             'encryption' => $this->nodeInfo->encryption,
             'encryption_settings' => $this->nodeInfo->encryption_settings,
             'flow' => $this->nodeInfo->flow,
@@ -108,5 +108,18 @@ class ServerController extends Controller
         }
 
         return response($response)->header('ETag', "\"{$eTag}\"");
+    }
+
+    private function formatTlsSettingsForNode($tlsSettings)
+    {
+        if (!is_array($tlsSettings)) {
+            return $tlsSettings;
+        }
+
+        if (array_key_exists('reject_unknown_sni', $tlsSettings)) {
+            $tlsSettings['reject_unknown_sni'] = (string)(int)$tlsSettings['reject_unknown_sni'];
+        }
+
+        return $tlsSettings;
     }
 }
