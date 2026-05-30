@@ -32528,7 +32528,7 @@
                     align: "center",
                     render: e=>{
                         return f.a.createElement(s["a"], {
-                            status: parseInt(e) ? "processing" : "error"
+                            status: parseInt(e) ? "success" : "error"
                         })
                     }
                 }, {
