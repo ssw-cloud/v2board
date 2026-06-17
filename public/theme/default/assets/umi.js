@@ -30869,13 +30869,13 @@
                     top: "50%",
                     transform: "translateY(-50%)",
                     zIndex: 3,
-                    width: e ? 36 : 48,
-                    height: e ? 36 : 48,
+                    width: e ? 40 : 56,
+                    height: e ? 40 : 56,
                     borderRadius: 999,
-                    border: 0,
-                    background: "rgba(17,24,39,.42)",
+                    border: "1px solid rgba(255,255,255,.18)",
+                    background: "linear-gradient(180deg, rgba(17,24,39,.62), rgba(17,24,39,.40))",
                     color: "#fff",
-                    fontSize: e ? 22 : 30,
+                    fontSize: 0,
                     fontWeight: 600,
                     lineHeight: 1,
                     display: "flex",
@@ -30886,7 +30886,9 @@
                     WebkitBackdropFilter: "blur(6px)",
                     cursor: "pointer",
                     outline: 0,
-                    padding: 0
+                    padding: 0,
+                    pointerEvents: "auto",
+                    transition: "transform .18s ease, background .18s ease, box-shadow .18s ease"
                 };
                 if (e) {
                     t.boxShadow = "0 6px 14px rgba(0,0,0,.16)";
@@ -30907,7 +30909,20 @@
                     onClick: e=>this.slideNotice(e, "prev"),
                     "aria-label": "Previous notice",
                     "data-side": "left"
-                }, "\u2190"), l.a.createElement("button", {
+                }, l.a.createElement("svg", {
+                    width: e ? 18 : 22,
+                    height: e ? 18 : 22,
+                    viewBox: "0 0 24 24",
+                    fill: "none",
+                    xmlns: "http://www.w3.org/2000/svg",
+                    "aria-hidden": "true"
+                }, l.a.createElement("path", {
+                    d: "M15 5L8 12L15 19",
+                    stroke: "currentColor",
+                    strokeWidth: "2.4",
+                    strokeLinecap: "round",
+                    strokeLinejoin: "round"
+                }))), l.a.createElement("button", {
                     type: "button",
                     style: o()({}, t, {
                         right: e ? 8 : 16
@@ -30916,7 +30931,20 @@
                     onClick: e=>this.slideNotice(e, "next"),
                     "aria-label": "Next notice",
                     "data-side": "right"
-                }, "\u2192"))
+                }, l.a.createElement("svg", {
+                    width: e ? 18 : 22,
+                    height: e ? 18 : 22,
+                    viewBox: "0 0 24 24",
+                    fill: "none",
+                    xmlns: "http://www.w3.org/2000/svg",
+                    "aria-hidden": "true"
+                }, l.a.createElement("path", {
+                    d: "M9 5L16 12L9 19",
+                    stroke: "currentColor",
+                    strokeWidth: "2.4",
+                    strokeLinecap: "round",
+                    strokeLinejoin: "round"
+                }))))
             }
             renderNotice(e) {
                 return l.a.createElement("a", {
