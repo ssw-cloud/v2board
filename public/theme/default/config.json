@@ -10,7 +10,8 @@
         "field_type": "select",
         "select_options": {
             "default": "默认(蓝色)",
-            "green": "奶绿色",
+            "green": "清新绿色",
+            "pink": "粉色",
             "black": "黑色",
             "darkblue": "暗蓝色"
         },

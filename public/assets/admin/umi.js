@@ -6205,12 +6205,14 @@
                 }, f.a.createElement("option", {
                     value: "default"
                 }, "\u9ed8\u8ba4"), f.a.createElement("option", {
+                    value: "green"
+                }, "\u6e05\u65b0\u7eff\u8272"), f.a.createElement("option", {
+                    value: "pink"
+                }, "\u7c89\u8272"), f.a.createElement("option", {
                     value: "black"
                 }, "\u9ed1\u8272"), f.a.createElement("option", {
                     value: "darkblue"
-                }, "\u6697\u84dd\u8272"), f.a.createElement("option", {
-                    value: "green"
-                }, "\u5976\u7eff\u8272"))), f.a.createElement(m, {
+                }, "\u6697\u84dd\u8272"))), f.a.createElement(m, {
                     title: "\u80cc\u666f",
                     description: "\u5c06\u4f1a\u5728\u540e\u53f0\u767b\u5f55\u9875\u9762\u8fdb\u884c\u5c55\u793a\u3002"
                 }, f.a.createElement("input", {
@@ -26196,7 +26198,7 @@
           , c = s.host
           , u = document.createElement("link");
         u.rel = "stylesheet",
-        u.href = c ? "./theme/".concat(l.color, ".css") : "/assets/admin/theme/".concat(l.color, ".css"),
+        u.href = c ? "./theme/".concat(l.color, ".css?v=").concat(s.version) : "/assets/admin/theme/".concat(l.color, ".css?v=").concat(s.version),
         document.getElementsByTagName("head")[0].appendChild(u),
         a.a.locale("zh-cn"),
         "1" === Object(r["d"])("dark_mode") && Object(i["enable"])({
