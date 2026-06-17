@@ -30863,40 +30863,60 @@
                 n && ("prev" === t ? n.slickPrev ? n.slickPrev() : n.prev && n.prev() : n.slickNext ? n.slickNext() : n.next && n.next())
             }
             renderNoticeControls() {
+                var e = "undefined" !== typeof window && window.innerWidth < 768;
+                var t = {
+                    position: "absolute",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    zIndex: 3,
+                    width: e ? 36 : 48,
+                    height: e ? 36 : 48,
+                    borderRadius: 999,
+                    border: 0,
+                    background: "rgba(17,24,39,.42)",
+                    color: "#fff",
+                    fontSize: e ? 22 : 30,
+                    fontWeight: 600,
+                    lineHeight: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 8px 18px rgba(0,0,0,.18)",
+                    backdropFilter: "blur(6px)",
+                    WebkitBackdropFilter: "blur(6px)",
+                    cursor: "pointer",
+                    outline: 0,
+                    padding: 0
+                };
+                if (e) {
+                    t.boxShadow = "0 6px 14px rgba(0,0,0,.16)";
+                }
                 return l.a.createElement("div", {
                     style: {
-                        display: "flex",
-                        gap: 8,
                         position: "absolute",
-                        right: 16,
-                        top: 16,
-                        zIndex: 2
+                        inset: 0,
+                        zIndex: 2,
+                        pointerEvents: "none"
                     }
                 }, l.a.createElement("button", {
                     type: "button",
-                    className: "btn btn-sm btn-light",
-                    style: {
-                        width: 34,
-                        height: 30,
-                        padding: 0,
-                        borderRadius: 6,
-                        lineHeight: "30px"
-                    },
+                    style: o()({}, t, {
+                        left: e ? 8 : 16
+                    }),
+                    className: "notice-carousel-arrow",
                     onClick: e=>this.slideNotice(e, "prev"),
-                    "aria-label": "Previous notice"
-                }, "\u2039"), l.a.createElement("button", {
+                    "aria-label": "Previous notice",
+                    "data-side": "left"
+                }, "\u2190"), l.a.createElement("button", {
                     type: "button",
-                    className: "btn btn-sm btn-light",
-                    style: {
-                        width: 34,
-                        height: 30,
-                        padding: 0,
-                        borderRadius: 6,
-                        lineHeight: "30px"
-                    },
+                    style: o()({}, t, {
+                        right: e ? 8 : 16
+                    }),
+                    className: "notice-carousel-arrow",
                     onClick: e=>this.slideNotice(e, "next"),
-                    "aria-label": "Next notice"
-                }, "\u203a"))
+                    "aria-label": "Next notice",
+                    "data-side": "right"
+                }, "\u2192"))
             }
             renderNotice(e) {
                 return l.a.createElement("a", {
