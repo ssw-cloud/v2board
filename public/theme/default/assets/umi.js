@@ -30817,6 +30817,7 @@
         class x extends l.a.Component {
             constructor(e) {
                 super(e),
+                this.noticeCarousel = null,
                 this.state = {
                     user: {
                         plan: {}
@@ -30854,6 +30855,48 @@
                     visible: !this.state.visible,
                     notice: e || {}
                 })
+            }
+            slideNotice(e, t) {
+                e && (e.preventDefault(),
+                e.stopPropagation());
+                var n = this.noticeCarousel;
+                n && ("prev" === t ? n.slickPrev ? n.slickPrev() : n.prev && n.prev() : n.slickNext ? n.slickNext() : n.next && n.next())
+            }
+            renderNoticeControls() {
+                return l.a.createElement("div", {
+                    style: {
+                        display: "flex",
+                        gap: 8,
+                        position: "absolute",
+                        right: 16,
+                        top: 16,
+                        zIndex: 2
+                    }
+                }, l.a.createElement("button", {
+                    type: "button",
+                    className: "btn btn-sm btn-light",
+                    style: {
+                        width: 34,
+                        height: 30,
+                        padding: 0,
+                        borderRadius: 6,
+                        lineHeight: "30px"
+                    },
+                    onClick: e=>this.slideNotice(e, "prev"),
+                    "aria-label": "Previous notice"
+                }, "\u2039"), l.a.createElement("button", {
+                    type: "button",
+                    className: "btn btn-sm btn-light",
+                    style: {
+                        width: 34,
+                        height: 30,
+                        padding: 0,
+                        borderRadius: 6,
+                        lineHeight: "30px"
+                    },
+                    onClick: e=>this.slideNotice(e, "next"),
+                    "aria-label": "Next notice"
+                }, "\u203a"))
             }
             renderNotice(e) {
                 return l.a.createElement("a", {
@@ -30988,17 +31031,22 @@
                 }, l.a.createElement("div", {
                     className: "content content-full"
                 }, x.map(e=>e), m.length > 0 && l.a.createElement("div", {
-                    className: "row mb-3 mb-md-0"
+                    className: "row mb-3 mb-md-0 position-relative"
                 }, l.a.createElement("div", {
                     className: "col-12 mb-sm-4"
-                }, m.length > 1 ? l.a.createElement(a["a"], {
-                    autoplay: !0
+                }, m.length > 1 ? l.a.createElement("div", {
+                    style: {
+                        position: "relative"
+                    }
+                }, this.renderNoticeControls(), l.a.createElement(a["a"], {
+                    autoplay: !0,
+                    ref: e=>this.noticeCarousel = e
                 }, m.map(e=>{
                     return l.a.createElement("div", {
-                        key: Math.random()
+                        key: e.id || e.title || Math.random()
                     }, this.renderNotice(e))
                 }
-                )) : this.renderNotice(m[0]))), l.a.createElement("div", {
+                ))) : this.renderNotice(m[0]))), l.a.createElement("div", {
                     className: "row mb-3 mb-md-0"
                 }, l.a.createElement("div", {
                     className: "col-xl-12"
