@@ -10,11 +10,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no">
     @php ($colors = [
-        'darkblue' => '#3559d1',
-        'black' => '#2d333b',
-        'default' => '#2f6df6',
-        'green' => '#2fbf92',
-        'pink' => '#d9468f'
+        'darkblue' => '#3b5998',
+        'black' => '#343a40',
+        'default' => '#0665d0',
+        'green' => '#319795'
     ])
     <meta name="theme-color" content="{{$colors[$theme_config['theme_color']]}}">
 
