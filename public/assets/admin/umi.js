@@ -106370,7 +106370,22 @@
                     value: "tcp"
                 }, "TCP"), y.a.createElement(N["a"].Option, {
                     value: "http"
-                }, "HTTP\u4f2a\u88c5")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && e.protocol != "naive" && e.protocol != "mieru" && y.a.createElement("div", {
+                }, "HTTP\u4f2a\u88c5")))), e.protocol == "mieru" && y.a.createElement("div", {
+                    className: "row"
+                }, y.a.createElement("div", {
+                    className: "form-group col-md-12 col-xs-12"
+                }, y.a.createElement("label", null, "\u4f20\u8f93\u6a21\u5f0f"), y.a.createElement(N["a"], {
+                    value: e.network ?? "tcp",
+                    placeholder: "\u9009\u62e9\u4f20\u8f93\u6a21\u5f0f",
+                    style: {
+                        width: "100%"
+                    },
+                    onChange: e=>this.formChange("network", e)
+                }, y.a.createElement(N["a"].Option, {
+                    value: "tcp"
+                }, "TCP"), y.a.createElement(N["a"].Option, {
+                    value: "udp"
+                }, "UDP")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && e.protocol != "naive" && e.protocol != "mieru" && y.a.createElement("div", {
                     className: "row"
                 }, y.a.createElement("div", {
                     className: "form-group col-md-12 col-xs-12"

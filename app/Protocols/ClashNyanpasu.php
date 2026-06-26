@@ -435,11 +435,15 @@ class ClashNyanpasu
 
     public static function buildMieru($password, $server)
     {
+        $transport = strtoupper($server['network'] ?? 'tcp');
+        if (!in_array($transport, ['TCP', 'UDP'])) {
+            $transport = 'TCP';
+        }
         $array = [
             'name' => $server['name'],
             'type' => 'mieru',
             'server' => $server['host'],
-            'transport' => 'TCP',
+            'transport' => $transport,
             'username' => $password,
             'password' => $password,
             'udp' => true,

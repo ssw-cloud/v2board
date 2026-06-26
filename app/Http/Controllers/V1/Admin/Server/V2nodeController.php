@@ -25,7 +25,7 @@ class V2nodeController extends Controller
             'tls' => 'required|in:0,1,2',
             'tls_settings' => 'nullable|array',
             'flow' => 'nullable|in:xtls-rprx-vision',
-            'network' => 'required|in:tcp,ws,grpc,http,httpupgrade,xhttp',
+            'network' => 'required|string',
             'network_settings' => 'nullable|array',
             'encryption' => 'nullable',
             'encryption_settings' => 'nullable|array',
@@ -53,7 +53,9 @@ class V2nodeController extends Controller
         if ($params['protocol'] === 'mieru') {
             $params['tls'] = 0;
             $params['tls_settings'] = null;
-            $params['network'] = 'tcp';
+            if (!in_array($params['network'], ['tcp', 'udp'])) {
+                abort(422, 'Invalid mieru transport mode');
+            }
             $params['network_settings'] = null;
             $params['flow'] = null;
             $params['encryption'] = null;
@@ -68,6 +70,9 @@ class V2nodeController extends Controller
             $params['obfs'] = null;
             $params['obfs_password'] = null;
             $params['padding_scheme'] = null;
+        }
+        if ($params['protocol'] !== 'mieru' && !in_array($params['network'], ['tcp', 'ws', 'grpc', 'http', 'httpupgrade', 'xhttp'])) {
+            abort(422, 'Invalid transport protocol');
         }
         if ($params['protocol'] === 'naive') {
             $params['network'] = 'tcp';

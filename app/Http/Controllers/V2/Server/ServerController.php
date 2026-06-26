@@ -135,6 +135,10 @@ class ServerController extends Controller
         $portValue = (strpos($clientPort, '-') !== false || strpos($clientPort, ',') !== false)
             ? $clientPort
             : (string)$this->nodeInfo->server_port;
+        $transport = strtoupper($this->nodeInfo->network ?: 'tcp');
+        if (!in_array($transport, ['TCP', 'UDP'])) {
+            $transport = 'TCP';
+        }
         $portBindings = [];
         foreach (explode(',', $portValue) as $port) {
             $port = trim($port);
@@ -142,7 +146,7 @@ class ServerController extends Controller
                 continue;
             }
 
-            $binding = ['protocol' => 'TCP'];
+            $binding = ['protocol' => $transport];
             if (strpos($port, '-') !== false) {
                 $binding['port_range'] = $port;
             } else {
@@ -154,12 +158,12 @@ class ServerController extends Controller
         if (empty($portBindings)) {
             $portBindings[] = [
                 'port' => (int)$this->nodeInfo->server_port,
-                'protocol' => 'TCP'
+                'protocol' => $transport
             ];
         }
 
         return [
-            'protocol' => 'TCP',
+            'protocol' => $transport,
             'port_bindings' => $portBindings,
             'mtu' => 1400,
             'logging_level' => 'INFO',

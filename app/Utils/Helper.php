@@ -503,9 +503,13 @@ class Helper
             'handshake-mode' => 'HANDSHAKE_STANDARD',
             'multiplexing' => 'MULTIPLEXING_LOW',
         ];
+        $transport = strtoupper($server['network'] ?? 'tcp');
+        if (!in_array($transport, ['TCP', 'UDP'])) {
+            $transport = 'TCP';
+        }
         foreach ($ports as $port) {
             $params[] = ['port', $port];
-            $params[] = ['protocol', 'TCP'];
+            $params[] = ['protocol', $transport];
         }
 
         $queryParts = [];
