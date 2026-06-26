@@ -106159,7 +106159,15 @@
                 }
             }
             formChange(e, t) {
-                if (e === "protocol" && ["anytls", "hysteria2", "trojan", "tuic", "naive"].includes(t)) {
+                if (e === "protocol" && t === "mieru") {
+                    this.setState({
+                        server: I()({}, this.state.server, {
+                            protocol: t,
+                            tls: 0,
+                            network: "tcp"
+                        })
+                    });
+                } else if (e === "protocol" && ["anytls", "hysteria2", "trojan", "tuic", "naive"].includes(t)) {
                     this.setState({
                         server: I()({}, this.state.server, {
                             protocol: t,
@@ -106321,7 +106329,10 @@
                 }, "VMess"), y.a.createElement(N["a"].Option, {
                     key: 7,
                     value: "naive"
-                }, "Naive"))), e.protocol != null && e.protocol != "shadowsocks" && y.a.createElement("div", {
+                }, "Naive"), y.a.createElement(N["a"].Option, {
+                    key: 8,
+                    value: "mieru"
+                }, "Mieru"))), e.protocol != null && e.protocol != "shadowsocks" && e.protocol != "mieru" && y.a.createElement("div", {
                     className: "form-group col-md-6 col-xs-12"
                 }, y.a.createElement("label", null, "\u5b89\u5168\u6027 ", (parseInt(e.tls) != 0 || e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic" || e.protocol == "naive") && y.a.createElement("a", {
                     href: "javascript:void(0);",
@@ -106359,7 +106370,7 @@
                     value: "tcp"
                 }, "TCP"), y.a.createElement(N["a"].Option, {
                     value: "http"
-                }, "HTTP\u4f2a\u88c5")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && e.protocol != "naive" && y.a.createElement("div", {
+                }, "HTTP\u4f2a\u88c5")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && e.protocol != "naive" && e.protocol != "mieru" && y.a.createElement("div", {
                     className: "row"
                 }, y.a.createElement("div", {
                     className: "form-group col-md-12 col-xs-12"

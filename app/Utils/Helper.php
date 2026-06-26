@@ -171,6 +171,9 @@ class Helper
     public static function buildUri($uuid, $server)
     {
         if ($server['type'] == 'v2node') {
+            if (($server['protocol'] ?? null) === 'mieru') {
+                return '';
+            }
             $server['type'] = $server['protocol'];
         } 
         $method = "build" . ucfirst($server['type']) . "Uri";
@@ -475,6 +478,47 @@ class Helper
     public static function buildNaiveUri($uuid, $server)
     {
         return self::buildNaiveV2rayNUri($uuid, $server);
+    }
+
+    public static function buildMieruUri($uuid, $server)
+    {
+        $host = self::formatHost($server['host']);
+        $name = self::encodeURIComponent($server['name']);
+        $profile = $server['name'];
+        $ports = [];
+        $portValue = (string)($server['mport'] ?? $server['port']);
+        foreach (explode(',', $portValue) as $port) {
+            $port = trim($port);
+            if ($port !== '') {
+                $ports[] = $port;
+            }
+        }
+        if (empty($ports)) {
+            $ports[] = (string)$server['port'];
+        }
+
+        $params = [
+            'profile' => $profile,
+            'mtu' => 1400,
+            'handshake-mode' => 'HANDSHAKE_STANDARD',
+            'multiplexing' => 'MULTIPLEXING_LOW',
+        ];
+        foreach ($ports as $port) {
+            $params[] = ['port', $port];
+            $params[] = ['protocol', 'TCP'];
+        }
+
+        $queryParts = [];
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                $queryParts[] = rawurlencode($value[0]) . '=' . rawurlencode($value[1]);
+            } else {
+                $queryParts[] = rawurlencode($key) . '=' . rawurlencode($value);
+            }
+        }
+        $query = implode('&', $queryParts);
+        $auth = rawurlencode($uuid) . ':' . rawurlencode($uuid);
+        return "mierus://{$auth}@{$host}?{$query}#{$name}\r\n";
     }
 
     public static function buildNaiveV2rayNUri($uuid, $server)

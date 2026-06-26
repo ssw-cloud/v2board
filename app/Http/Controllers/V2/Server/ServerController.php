@@ -55,6 +55,7 @@ class ServerController extends Controller
         $response = [
             'host' => $this->nodeInfo->host,
             'listen_ip' => $this->nodeInfo->listen_ip,
+            'port' => $this->nodeInfo->port,
             'server_port' => $this->nodeInfo->server_port,
             'network' => $this->nodeInfo->network,
             'network_settings' => $this->nodeInfo->network_settings,
@@ -71,7 +72,8 @@ class ServerController extends Controller
             'down_mbps' => $this->nodeInfo->down_mbps,
             'obfs' => $this->nodeInfo->obfs,
             'obfs_password' => $this->nodeInfo->obfs_password,
-            'padding_scheme' => $this->nodeInfo->padding_scheme
+            'padding_scheme' => $this->nodeInfo->padding_scheme,
+            'mieru_settings' => $this->formatMieruSettingsForNode()
         ];
 
         if ($this->nodeInfo->cipher === '2022-blake3-aes-128-gcm') {
@@ -103,7 +105,7 @@ class ServerController extends Controller
         $eTag = sha1($rsp);
 
         // 不使用 abort(304)，避免异常路径
-        if ($request->header('If-None-Match') === $eTag) {
+        if (trim($request->header('If-None-Match'), '"') === $eTag) {
             return response('', 304)->header('ETag', "\"{$eTag}\"");
         }
 
@@ -121,5 +123,49 @@ class ServerController extends Controller
         }
 
         return $tlsSettings;
+    }
+
+    private function formatMieruSettingsForNode()
+    {
+        if ($this->nodeInfo->protocol !== 'mieru') {
+            return null;
+        }
+
+        $clientPort = (string)$this->nodeInfo->port;
+        $portValue = (strpos($clientPort, '-') !== false || strpos($clientPort, ',') !== false)
+            ? $clientPort
+            : (string)$this->nodeInfo->server_port;
+        $portBindings = [];
+        foreach (explode(',', $portValue) as $port) {
+            $port = trim($port);
+            if ($port === '') {
+                continue;
+            }
+
+            $binding = ['protocol' => 'TCP'];
+            if (strpos($port, '-') !== false) {
+                $binding['port_range'] = $port;
+            } else {
+                $binding['port'] = (int)$port;
+            }
+            $portBindings[] = $binding;
+        }
+
+        if (empty($portBindings)) {
+            $portBindings[] = [
+                'port' => (int)$this->nodeInfo->server_port,
+                'protocol' => 'TCP'
+            ];
+        }
+
+        return [
+            'protocol' => 'TCP',
+            'port_bindings' => $portBindings,
+            'mtu' => 1400,
+            'logging_level' => 'INFO',
+            'user_hint_is_mandatory' => true,
+            'allow_private_ip' => false,
+            'allow_loopback_ip' => false
+        ];
     }
 }

@@ -62,6 +62,10 @@ class ClashVerge
                     $proxy[] = self::buildAnyTLS($user['uuid'], $item);
                     $proxies[] = $item['name'];
                     break;
+                case 'mieru':
+                    $proxy[] = self::buildMieru($user['uuid'], $item);
+                    $proxies[] = $item['name'];
+                    break;
                 case 'hysteria':
                     $proxy[] = self::buildHysteria($user['uuid'], $item);
                     $proxies[] = $item['name'];
@@ -418,6 +422,30 @@ class ClashVerge
         $tlsSettings = $server['tls_settings'] ?? [];
         $array['sni'] = $server['server_name'] ?? ($tlsSettings['server_name'] ?? '');
         $array['skip-cert-verify'] = ($server['insecure'] ?? ($tlsSettings['allow_insecure'] ?? 0)) == 1 ? true : false;
+        return $array;
+    }
+
+    public static function buildMieru($password, $server)
+    {
+        $array = [
+            'name' => $server['name'],
+            'type' => 'mieru',
+            'server' => $server['host'],
+            'transport' => 'TCP',
+            'username' => $password,
+            'password' => $password,
+            'udp' => true,
+            'multiplexing' => 'MULTIPLEXING_LOW',
+        ];
+
+        $portValue = (string)($server['mport'] ?? $server['port']);
+        $firstPort = trim(explode(',', $portValue)[0]);
+        if (strpos($firstPort, '-') !== false) {
+            $array['port-range'] = $firstPort;
+        } else {
+            $array['port'] = (int)$firstPort;
+        }
+
         return $array;
     }
 

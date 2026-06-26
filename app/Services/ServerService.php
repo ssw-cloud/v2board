@@ -237,7 +237,7 @@ class ServerService
         $tmp = array_column($servers, 'sort');
         array_multisort($tmp, SORT_ASC, $servers);
         return array_map(function ($server) {
-            if (strpos($server['port'], '-')) {
+            if (strpos($server['port'], '-') !== false || strpos($server['port'], ',') !== false) {
                 $server['mport'] = (string)$server['port'];
             } else {
                 $server['port'] = (int)$server['port'];
@@ -397,6 +397,13 @@ class ServerService
             if (($v['protocol'] ?? null) === 'naive') {
                 $servers[$k]['install_command'] = sprintf(
                     'bash <(curl -fsSL https://raw.githubusercontent.com/ssw-cloud/v2naive/main/script/install.sh) --api-host %s --node-id %d --api-key %s',
+                    $apiHostArg,
+                    $nodeId,
+                    $apiKeyArg
+                );
+            } elseif (($v['protocol'] ?? null) === 'mieru') {
+                $servers[$k]['install_command'] = sprintf(
+                    'bash <(curl -fsSL https://raw.githubusercontent.com/ssw-cloud/v2mieru/main/script/install.sh) --api-host %s --node-id %d --api-key %s',
                     $apiHostArg,
                     $nodeId,
                     $apiKeyArg
