@@ -484,7 +484,7 @@ class Helper
     {
         $host = self::formatHost($server['host']);
         $name = self::encodeURIComponent($server['name']);
-        $profile = $server['name'];
+        $profile = 'mieru-' . ($server['id'] ?? substr(md5($server['name']), 0, 8));
         $ports = [];
         $portValue = (string)($server['mport'] ?? $server['port']);
         foreach (explode(',', $portValue) as $port) {

@@ -167,7 +167,7 @@ class ServerController extends Controller
             'port_bindings' => $portBindings,
             'mtu' => 1400,
             'logging_level' => 'INFO',
-            'user_hint_is_mandatory' => true,
+            'user_hint_is_mandatory' => false,
             'allow_private_ip' => false,
             'allow_loopback_ip' => false
         ];
