@@ -101,8 +101,8 @@ class SingboxOld
 
     protected function buildShadowsocks($password, $server)
     {
-        if (strpos($server['cipher'], '2022-blake3') !== false) {
-            $length = $server['cipher'] === '2022-blake3-aes-128-gcm' ? 16 : 32;
+        $length = Helper::getShadowsocks2022KeyLength($server['cipher']);
+        if ($length) {
             $serverKey = Helper::getServerKey($server['created_at'], $length);
             $userKey = Helper::uuidToBase64($password, $length);
             $password = "{$serverKey}:{$userKey}";

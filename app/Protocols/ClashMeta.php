@@ -62,6 +62,10 @@ class ClashMeta
                     $proxy[] = self::buildAnyTLS($user['uuid'], $item);
                     $proxies[] = $item['name'];
                     break;
+                case 'mieru':
+                    $proxy[] = self::buildMieru($user['uuid'], $item);
+                    $proxies[] = $item['name'];
+                    break;
                 case 'hysteria':
                     $proxy[] = self::buildHysteria($user['uuid'], $item);
                     $proxies[] = $item['name'];
@@ -113,14 +117,10 @@ class ClashMeta
 
     public static function buildShadowsocks($password, $server)
     {
-        if ($server['cipher'] === '2022-blake3-aes-128-gcm') {
-            $serverKey = Helper::getServerKey($server['created_at'], 16);
-            $userKey = Helper::uuidToBase64($password, 16);
-            $password = "{$serverKey}:{$userKey}";
-        }
-        if ($server['cipher'] === '2022-blake3-aes-256-gcm') {
-            $serverKey = Helper::getServerKey($server['created_at'], 32);
-            $userKey = Helper::uuidToBase64($password, 32);
+        $length = Helper::getShadowsocks2022KeyLength($server['cipher']);
+        if ($length) {
+            $serverKey = Helper::getServerKey($server['created_at'], $length);
+            $userKey = Helper::uuidToBase64($password, $length);
             $password = "{$serverKey}:{$userKey}";
         }
         $array = [];
@@ -419,6 +419,34 @@ class ClashMeta
         $tlsSettings = $server['tls_settings'] ?? [];
         $array['sni'] = $server['server_name'] ?? ($tlsSettings['server_name'] ?? '');
         $array['skip-cert-verify'] = ($server['insecure'] ?? ($tlsSettings['allow_insecure'] ?? 0)) == 1 ? true : false;
+        return $array;
+    }
+
+    public static function buildMieru($password, $server)
+    {
+        $transport = strtoupper($server['network'] ?? 'tcp');
+        if (!in_array($transport, ['TCP', 'UDP'])) {
+            $transport = 'TCP';
+        }
+        $array = [
+            'name' => $server['name'],
+            'type' => 'mieru',
+            'server' => $server['host'],
+            'transport' => $transport,
+            'username' => $password,
+            'password' => $password,
+            'udp' => true,
+            'multiplexing' => 'MULTIPLEXING_LOW',
+        ];
+
+        $portValue = (string)($server['mport'] ?? $server['port']);
+        $firstPort = trim(explode(',', $portValue)[0]);
+        if (strpos($firstPort, '-') !== false) {
+            $array['port-range'] = $firstPort;
+        } else {
+            $array['port'] = (int)$firstPort;
+        }
+
         return $array;
     }
 

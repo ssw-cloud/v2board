@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1\Client;
 
 use App\Http\Controllers\Controller;
 use App\Protocols\General;
+use App\Protocols\Mieru;
 use App\Protocols\Singbox\Singbox;
 use App\Protocols\Singbox\SingboxOld;
 use App\Protocols\ClashMeta;

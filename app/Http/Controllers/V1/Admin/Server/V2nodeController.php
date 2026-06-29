@@ -21,11 +21,11 @@ class V2nodeController extends Controller
             'listen_ip' => 'nullable',
             'port' => 'required',
             'server_port' => 'required',
-            'protocol' => 'required|in:shadowsocks,vmess,vless,trojan,tuic,hysteria2,anytls,naive',
+            'protocol' => 'required|in:shadowsocks,vmess,vless,trojan,tuic,hysteria2,anytls,naive,mieru',
             'tls' => 'required|in:0,1,2',
             'tls_settings' => 'nullable|array',
             'flow' => 'nullable|in:xtls-rprx-vision',
-            'network' => 'required|in:tcp,ws,grpc,http,httpupgrade,xhttp',
+            'network' => 'required|string',
             'network_settings' => 'nullable|array',
             'encryption' => 'nullable',
             'encryption_settings' => 'nullable|array',
@@ -49,6 +49,30 @@ class V2nodeController extends Controller
         }
         if (in_array($params['protocol'], ['hysteria2', 'trojan', 'tuic', 'naive'])) {
             $params['tls'] = 1;
+        }
+        if ($params['protocol'] === 'mieru') {
+            $params['tls'] = 0;
+            $params['tls_settings'] = null;
+            if (!in_array($params['network'], ['tcp', 'udp'])) {
+                abort(422, 'Invalid mieru transport mode');
+            }
+            $params['network_settings'] = null;
+            $params['flow'] = null;
+            $params['encryption'] = null;
+            $params['encryption_settings'] = null;
+            $params['disable_sni'] = 0;
+            $params['udp_relay_mode'] = null;
+            $params['zero_rtt_handshake'] = 0;
+            $params['congestion_control'] = null;
+            $params['cipher'] = null;
+            $params['up_mbps'] = 0;
+            $params['down_mbps'] = 0;
+            $params['obfs'] = null;
+            $params['obfs_password'] = null;
+            $params['padding_scheme'] = null;
+        }
+        if ($params['protocol'] !== 'mieru' && !in_array($params['network'], ['tcp', 'ws', 'grpc', 'http', 'httpupgrade', 'xhttp'])) {
+            abort(422, 'Invalid transport protocol');
         }
         if ($params['protocol'] === 'naive') {
             $params['network'] = 'tcp';

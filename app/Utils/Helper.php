@@ -16,6 +16,19 @@ class Helper
         return base64_encode(substr(md5($timestamp), 0, $length));
     }
 
+    public static function getShadowsocks2022KeyLength($cipher)
+    {
+        switch ($cipher) {
+            case '2022-blake3-aes-128-gcm':
+                return 16;
+            case '2022-blake3-aes-256-gcm':
+            case '2022-blake3-chacha20-poly1305':
+                return 32;
+            default:
+                return 0;
+        }
+    }
+
     public static function guid($format = false)
     {
         if (function_exists('com_create_guid') === true) {
@@ -171,6 +184,9 @@ class Helper
     public static function buildUri($uuid, $server)
     {
         if ($server['type'] == 'v2node') {
+            if (($server['protocol'] ?? null) === 'mieru') {
+                return '';
+            }
             $server['type'] = $server['protocol'];
         } 
         $method = "build" . ucfirst($server['type']) . "Uri";
@@ -207,8 +223,8 @@ class Helper
     public static function buildShadowsocksUri($uuid, $server)
     {
         $cipher = $server['cipher'];
-        if (strpos($cipher, '2022-blake3') !== false) {
-            $length = $cipher === '2022-blake3-aes-128-gcm' ? 16 : 32;
+        $length = self::getShadowsocks2022KeyLength($cipher);
+        if ($length) {
             $serverKey = Helper::getServerKey($server['created_at'], $length);
             $userKey = Helper::uuidToBase64($uuid, $length);
             $password = "{$serverKey}:{$userKey}";
@@ -475,6 +491,51 @@ class Helper
     public static function buildNaiveUri($uuid, $server)
     {
         return self::buildNaiveV2rayNUri($uuid, $server);
+    }
+
+    public static function buildMieruUri($uuid, $server)
+    {
+        $host = self::formatHost($server['host']);
+        $name = self::encodeURIComponent($server['name']);
+        $profile = $server['name'];
+        $ports = [];
+        $portValue = (string)($server['mport'] ?? $server['port']);
+        foreach (explode(',', $portValue) as $port) {
+            $port = trim($port);
+            if ($port !== '') {
+                $ports[] = $port;
+            }
+        }
+        if (empty($ports)) {
+            $ports[] = (string)$server['port'];
+        }
+
+        $params = [
+            'profile' => $profile,
+            'mtu' => 1400,
+            'handshake-mode' => 'HANDSHAKE_STANDARD',
+            'multiplexing' => 'MULTIPLEXING_LOW',
+        ];
+        $transport = strtoupper($server['network'] ?? 'tcp');
+        if (!in_array($transport, ['TCP', 'UDP'])) {
+            $transport = 'TCP';
+        }
+        foreach ($ports as $port) {
+            $params[] = ['port', $port];
+            $params[] = ['protocol', $transport];
+        }
+
+        $queryParts = [];
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                $queryParts[] = rawurlencode($value[0]) . '=' . rawurlencode($value[1]);
+            } else {
+                $queryParts[] = rawurlencode($key) . '=' . rawurlencode($value);
+            }
+        }
+        $query = implode('&', $queryParts);
+        $auth = rawurlencode($uuid) . ':' . rawurlencode($uuid);
+        return "mierus://{$auth}@{$host}?{$query}#{$name}\r\n";
     }
 
     public static function buildNaiveV2rayNUri($uuid, $server)

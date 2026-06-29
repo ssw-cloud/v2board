@@ -28294,7 +28294,9 @@
                     value: "2022-blake3-aes-128-gcm"
                 }, "2022-blake3-aes-128-gcm"), h.a.createElement(a["a"].Option, {
                     value: "2022-blake3-aes-256-gcm"
-                }, "2022-blake3-aes-256-gcm"))), h.a.createElement("div", {
+                }, "2022-blake3-aes-256-gcm"), h.a.createElement(a["a"].Option, {
+                    value: "2022-blake3-chacha20-poly1305"
+                }, "2022-blake3-chacha20-poly1305"))), h.a.createElement("div", {
                     className: "form-group"
                 }, h.a.createElement("label", null, "\u6df7\u6dc6"), h.a.createElement(a["a"], {
                     value: e.obfs || "",
@@ -106159,7 +106161,15 @@
                 }
             }
             formChange(e, t) {
-                if (e === "protocol" && ["anytls", "hysteria2", "trojan", "tuic", "naive"].includes(t)) {
+                if (e === "protocol" && t === "mieru") {
+                    this.setState({
+                        server: I()({}, this.state.server, {
+                            protocol: t,
+                            tls: 0,
+                            network: "tcp"
+                        })
+                    });
+                } else if (e === "protocol" && ["anytls", "hysteria2", "trojan", "tuic", "naive"].includes(t)) {
                     this.setState({
                         server: I()({}, this.state.server, {
                             protocol: t,
@@ -106321,7 +106331,10 @@
                 }, "VMess"), y.a.createElement(N["a"].Option, {
                     key: 7,
                     value: "naive"
-                }, "Naive"))), e.protocol != null && e.protocol != "shadowsocks" && y.a.createElement("div", {
+                }, "Naive"), y.a.createElement(N["a"].Option, {
+                    key: 8,
+                    value: "mieru"
+                }, "Mieru"))), e.protocol != null && e.protocol != "shadowsocks" && e.protocol != "mieru" && y.a.createElement("div", {
                     className: "form-group col-md-6 col-xs-12"
                 }, y.a.createElement("label", null, "\u5b89\u5168\u6027 ", (parseInt(e.tls) != 0 || e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic" || e.protocol == "naive") && y.a.createElement("a", {
                     href: "javascript:void(0);",
@@ -106359,7 +106372,22 @@
                     value: "tcp"
                 }, "TCP"), y.a.createElement(N["a"].Option, {
                     value: "http"
-                }, "HTTP\u4f2a\u88c5")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && e.protocol != "naive" && y.a.createElement("div", {
+                }, "HTTP\u4f2a\u88c5")))), e.protocol == "mieru" && y.a.createElement("div", {
+                    className: "row"
+                }, y.a.createElement("div", {
+                    className: "form-group col-md-12 col-xs-12"
+                }, y.a.createElement("label", null, "\u4f20\u8f93\u6a21\u5f0f"), y.a.createElement(N["a"], {
+                    value: e.network ?? "tcp",
+                    placeholder: "\u9009\u62e9\u4f20\u8f93\u6a21\u5f0f",
+                    style: {
+                        width: "100%"
+                    },
+                    onChange: e=>this.formChange("network", e)
+                }, y.a.createElement(N["a"].Option, {
+                    value: "tcp"
+                }, "TCP"), y.a.createElement(N["a"].Option, {
+                    value: "udp"
+                }, "UDP")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && e.protocol != "naive" && e.protocol != "mieru" && y.a.createElement("div", {
                     className: "row"
                 }, y.a.createElement("div", {
                     className: "form-group col-md-12 col-xs-12"
@@ -106526,7 +106554,9 @@
                     value: "2022-blake3-aes-128-gcm"
                 }, "2022-blake3-aes-128-gcm"), y.a.createElement(N["a"].Option, {
                     value: "2022-blake3-aes-256-gcm"
-                }, "2022-blake3-aes-256-gcm"))), e.protocol == "vless" && y.a.createElement("div", {
+                }, "2022-blake3-aes-256-gcm"), y.a.createElement(N["a"].Option, {
+                    value: "2022-blake3-chacha20-poly1305"
+                }, "2022-blake3-chacha20-poly1305"))), e.protocol == "vless" && y.a.createElement("div", {
                     className: "row"
                 }, y.a.createElement("div", {
                     className: "form-group col-md-12 col-xs-12"

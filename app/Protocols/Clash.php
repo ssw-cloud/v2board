@@ -2,6 +2,7 @@
 
 namespace App\Protocols;
 
+use App\Utils\Helper;
 use phpDocumentor\Reflection\Types\Self_;
 use Symfony\Component\Yaml\Yaml;
 
@@ -99,13 +100,20 @@ class Clash
 
     public static function buildShadowsocks($uuid, $server)
     {
+        $password = $uuid;
+        $length = Helper::getShadowsocks2022KeyLength($server['cipher']);
+        if ($length) {
+            $serverKey = Helper::getServerKey($server['created_at'], $length);
+            $userKey = Helper::uuidToBase64($uuid, $length);
+            $password = "{$serverKey}:{$userKey}";
+        }
         $array = [];
         $array['name'] = $server['name'];
         $array['type'] = 'ss';
         $array['server'] = $server['host'];
         $array['port'] = $server['port'];
         $array['cipher'] = $server['cipher'];
-        $array['password'] = $uuid;
+        $array['password'] = $password;
         $array['udp'] = true;
         if (isset($server['obfs']) && $server['obfs'] === 'http') {
             $array['plugin'] = 'obfs';
