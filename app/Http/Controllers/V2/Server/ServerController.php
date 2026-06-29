@@ -76,12 +76,9 @@ class ServerController extends Controller
             'mieru_settings' => $this->formatMieruSettingsForNode()
         ];
 
-        if ($this->nodeInfo->cipher === '2022-blake3-aes-128-gcm') {
-            $response['server_key'] = Helper::getServerKey($this->nodeInfo->created_at, 16);
-        }
-
-        if ($this->nodeInfo->cipher === '2022-blake3-aes-256-gcm') {
-            $response['server_key'] = Helper::getServerKey($this->nodeInfo->created_at, 32);
+        $serverKeyLength = Helper::getShadowsocks2022KeyLength($this->nodeInfo->cipher);
+        if ($serverKeyLength) {
+            $response['server_key'] = Helper::getServerKey($this->nodeInfo->created_at, $serverKeyLength);
         }
 
         if ($this->nodeInfo->up_mbps == 0 && $this->nodeInfo->down_mbps == 0) {

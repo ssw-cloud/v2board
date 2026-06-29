@@ -16,6 +16,19 @@ class Helper
         return base64_encode(substr(md5($timestamp), 0, $length));
     }
 
+    public static function getShadowsocks2022KeyLength($cipher)
+    {
+        switch ($cipher) {
+            case '2022-blake3-aes-128-gcm':
+                return 16;
+            case '2022-blake3-aes-256-gcm':
+            case '2022-blake3-chacha20-poly1305':
+                return 32;
+            default:
+                return 0;
+        }
+    }
+
     public static function guid($format = false)
     {
         if (function_exists('com_create_guid') === true) {
@@ -210,8 +223,8 @@ class Helper
     public static function buildShadowsocksUri($uuid, $server)
     {
         $cipher = $server['cipher'];
-        if (strpos($cipher, '2022-blake3') !== false) {
-            $length = $cipher === '2022-blake3-aes-128-gcm' ? 16 : 32;
+        $length = self::getShadowsocks2022KeyLength($cipher);
+        if ($length) {
             $serverKey = Helper::getServerKey($server['created_at'], $length);
             $userKey = Helper::uuidToBase64($uuid, $length);
             $password = "{$serverKey}:{$userKey}";

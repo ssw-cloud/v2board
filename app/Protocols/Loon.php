@@ -48,13 +48,10 @@ class Loon
 
     public static function buildShadowsocks($password, $server)
     {
-        if ($server['cipher'] === '2022-blake3-aes-128-gcm') {
-            $serverKey = Helper::getServerKey($server['created_at'], 16);
-            $userKey = Helper::uuidToBase64($password, 16);
-            $password = "{$serverKey}:{$userKey}";
-        } elseif ($server['cipher'] === '2022-blake3-aes-256-gcm') {
-            $serverKey = Helper::getServerKey($server['created_at'], 32);
-            $userKey = Helper::uuidToBase64($password, 32);
+        $length = Helper::getShadowsocks2022KeyLength($server['cipher']);
+        if ($length) {
+            $serverKey = Helper::getServerKey($server['created_at'], $length);
+            $userKey = Helper::uuidToBase64($password, $length);
             $password = "{$serverKey}:{$userKey}";
         }
         $config = [
