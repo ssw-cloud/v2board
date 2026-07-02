@@ -644,8 +644,11 @@ class Helper
 
     public static function buildSudokuClashProxy($user, $server)
     {
-        $uuid = is_array($user) ? ($user['uuid'] ?? '') : $user;
-        $userId = is_array($user) ? ($user['id'] ?? null) : null;
+        $uuid = self::getSudokuUserValue($user, 'uuid');
+        if ($uuid === null || $uuid === '') {
+            $uuid = is_scalar($user) ? (string)$user : '';
+        }
+        $userId = self::getSudokuUserValue($user, 'id');
         $key = self::buildSudokuClientKey($uuid, $server, $userId);
         if ($key === '') {
             return null;
@@ -680,6 +683,25 @@ class Helper
             $array['custom-tables'] = $settings['custom_tables'];
         }
         return $array;
+    }
+
+    private static function getSudokuUserValue($user, $key)
+    {
+        if (is_array($user)) {
+            return $user[$key] ?? null;
+        }
+        if ($user instanceof \ArrayAccess && isset($user[$key])) {
+            return $user[$key];
+        }
+        if (is_object($user)) {
+            if (isset($user->{$key})) {
+                return $user->{$key};
+            }
+            if (method_exists($user, 'getAttribute')) {
+                return $user->getAttribute($key);
+            }
+        }
+        return null;
     }
 
     public static function buildSudokuUri($uuid, $server)
