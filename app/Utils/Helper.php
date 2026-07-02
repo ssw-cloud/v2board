@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Cache;
 
 class Helper
 {
+    private const ED25519_ORDER_HEX = '1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed';
+
     public static function uuidToBase64($uuid, $length)
     {
         return base64_encode(substr($uuid, 0, $length));
@@ -536,6 +538,404 @@ class Helper
         $query = implode('&', $queryParts);
         $auth = rawurlencode($uuid) . ':' . rawurlencode($uuid);
         return "mierus://{$auth}@{$host}?{$query}#{$name}\r\n";
+    }
+
+    public static function normalizeSudokuSettings($settings, $generateMissingKey = false)
+    {
+        $settings = is_array($settings) ? $settings : [];
+        $httpmaskInput = isset($settings['httpmask']) && is_array($settings['httpmask']) ? $settings['httpmask'] : [];
+
+        $privateKey = strtolower(trim((string)($settings['master_private_key'] ?? '')));
+        $publicKey = strtolower(trim((string)($settings['master_public_key'] ?? '')));
+        if ($generateMissingKey && $privateKey === '') {
+            $pair = self::generateSudokuMasterKeyPair();
+            $privateKey = $pair['master_private_key'];
+            $publicKey = $pair['master_public_key'];
+        }
+        if ($publicKey === '' && $privateKey !== '') {
+            $publicKey = self::recoverSudokuPublicKey($privateKey);
+        }
+
+        $paddingMin = (int)($settings['padding_min'] ?? $settings['padding-min'] ?? 5);
+        $paddingMax = (int)($settings['padding_max'] ?? $settings['padding-max'] ?? 15);
+        if ($paddingMin < 0) $paddingMin = 0;
+        if ($paddingMax < $paddingMin) $paddingMax = $paddingMin;
+
+        $maskHost = trim((string)($httpmaskInput['mask_host'] ?? $httpmaskInput['mask-host'] ?? $httpmaskInput['host'] ?? ''));
+        $pathRoot = trim((string)($httpmaskInput['path_root'] ?? $httpmaskInput['path-root'] ?? ''));
+        $httpmask = [
+            'disable' => self::normalizeBool($httpmaskInput['disable'] ?? true, true),
+            'mode' => self::normalizeSudokuChoice($httpmaskInput['mode'] ?? 'legacy', ['legacy', 'stream', 'poll', 'auto', 'ws'], 'legacy'),
+            'tls' => self::normalizeBool($httpmaskInput['tls'] ?? false, false),
+            'host' => $maskHost,
+            'mask_host' => $maskHost,
+            'path_root' => $pathRoot,
+            'multiplex' => self::normalizeSudokuChoice($httpmaskInput['multiplex'] ?? ($settings['multiplex'] ?? 'off'), ['off', 'auto', 'on'], 'off'),
+        ];
+
+        return [
+            'master_private_key' => $privateKey,
+            'master_public_key' => $publicKey,
+            'aead_method' => self::normalizeSudokuChoice($settings['aead_method'] ?? $settings['aead-method'] ?? $settings['aead'] ?? 'chacha20-poly1305', ['chacha20-poly1305', 'aes-128-gcm', 'none'], 'chacha20-poly1305'),
+            'table_type' => self::normalizeSudokuTableType($settings['table_type'] ?? $settings['table-type'] ?? $settings['ascii'] ?? 'prefer_entropy'),
+            'padding_min' => $paddingMin,
+            'padding_max' => $paddingMax,
+            'custom_table' => strtolower(trim((string)($settings['custom_table'] ?? $settings['custom-table'] ?? ''))),
+            'custom_tables' => self::normalizeSudokuStringList($settings['custom_tables'] ?? $settings['custom-tables'] ?? []),
+            'enable_pure_downlink' => self::normalizeBool($settings['enable_pure_downlink'] ?? $settings['enable-pure-downlink'] ?? true, true),
+            'suspicious_action' => self::normalizeSudokuChoice($settings['suspicious_action'] ?? 'silent', ['silent', 'fallback'], 'silent'),
+            'fallback_address' => trim((string)($settings['fallback_address'] ?? '')),
+            'httpmask' => $httpmask,
+            'multiplex' => $httpmask['multiplex'],
+        ];
+    }
+
+    public static function generateSudokuMasterKeyPair()
+    {
+        $privateKey = self::generateSudokuScalar();
+        $publicKey = self::ed25519BaseNoClamp($privateKey);
+        return [
+            'master_private_key' => bin2hex($privateKey),
+            'master_public_key' => $publicKey === null ? '' : bin2hex($publicKey),
+        ];
+    }
+
+    public static function recoverSudokuPublicKey($privateKey)
+    {
+        $raw = @hex2bin(trim((string)$privateKey));
+        if ($raw === false) return '';
+        if (strlen($raw) === 64) {
+            $raw = self::sudokuScalarAdd(substr($raw, 0, 32), substr($raw, 32, 32));
+        } elseif (strlen($raw) !== 32) {
+            return '';
+        }
+        $publicKey = self::ed25519BaseNoClamp($raw);
+        return $publicKey === null ? '' : bin2hex($publicKey);
+    }
+
+    public static function buildSudokuClientKey($uuid, $server, $userId = null)
+    {
+        $settings = self::normalizeSudokuSettings($server['encryption_settings'] ?? []);
+        $masterHex = strtolower(trim((string)($settings['master_private_key'] ?? '')));
+        if (!preg_match('/^[0-9a-f]{64}$/', $masterHex)) {
+            return '';
+        }
+        if ($userId === null || $userId === '') {
+            $userId = User::where('uuid', $uuid)->value('id');
+        }
+        if ($userId === null || $userId === '') {
+            return '';
+        }
+        $nodeId = (int)($server['id'] ?? 0);
+        $seed = sprintf('v2sudoku|node:%d|uid:%d|uuid:%s|master:%s', $nodeId, (int)$userId, $uuid, $masterHex);
+        $r = self::sudokuScalarReduce(hash('sha512', $seed, true));
+        $k = self::sudokuScalarSub(hex2bin($masterHex), $r);
+        $clientKey = bin2hex($r . $k);
+
+        if (!empty($settings['master_public_key'])) {
+            $recovered = self::recoverSudokuPublicKey($clientKey);
+            if ($recovered !== '' && strtolower($settings['master_public_key']) !== $recovered) {
+                return '';
+            }
+        }
+
+        return $clientKey;
+    }
+
+    public static function buildSudokuClashProxy($user, $server)
+    {
+        $uuid = is_array($user) ? ($user['uuid'] ?? '') : $user;
+        $userId = is_array($user) ? ($user['id'] ?? null) : null;
+        $key = self::buildSudokuClientKey($uuid, $server, $userId);
+        if ($key === '') {
+            return null;
+        }
+
+        $settings = self::normalizeSudokuSettings($server['encryption_settings'] ?? []);
+        $httpmask = $settings['httpmask'];
+        $array = [
+            'name' => $server['name'],
+            'type' => 'sudoku',
+            'server' => $server['host'],
+            'port' => (int)$server['port'],
+            'key' => $key,
+            'aead-method' => $settings['aead_method'],
+            'padding-min' => (int)$settings['padding_min'],
+            'padding-max' => (int)$settings['padding_max'],
+            'table-type' => $settings['table_type'],
+            'httpmask' => [
+                'disable' => (bool)$httpmask['disable'],
+                'mode' => $httpmask['mode'],
+                'tls' => (bool)$httpmask['tls'],
+                'host' => $httpmask['host'],
+                'path-root' => $httpmask['path_root'],
+                'multiplex' => $httpmask['multiplex'],
+            ],
+            'enable-pure-downlink' => (bool)$settings['enable_pure_downlink'],
+        ];
+        if ($settings['custom_table'] !== '') {
+            $array['custom-table'] = $settings['custom_table'];
+        }
+        if (!empty($settings['custom_tables'])) {
+            $array['custom-tables'] = $settings['custom_tables'];
+        }
+        return $array;
+    }
+
+    public static function buildSudokuUri($uuid, $server)
+    {
+        $key = self::buildSudokuClientKey($uuid, $server);
+        if ($key === '') {
+            return '';
+        }
+
+        $settings = self::normalizeSudokuSettings($server['encryption_settings'] ?? []);
+        $httpmask = $settings['httpmask'];
+        $payload = [
+            'h' => $server['host'],
+            'p' => (int)$server['port'],
+            'k' => $key,
+            'a' => self::encodeSudokuAscii($settings['table_type']),
+            'e' => $settings['aead_method'],
+            'm' => 1080,
+            'hd' => (bool)$httpmask['disable'],
+        ];
+        if (!$settings['enable_pure_downlink']) {
+            $payload['x'] = true;
+        }
+        if ($settings['custom_table'] !== '') {
+            $payload['t'] = $settings['custom_table'];
+        }
+        if (!empty($settings['custom_tables'])) {
+            $payload['ts'] = $settings['custom_tables'];
+        }
+        if ($httpmask['mode'] !== 'legacy') {
+            $payload['hm'] = $httpmask['mode'];
+        }
+        if ($httpmask['tls']) {
+            $payload['ht'] = true;
+        }
+        if ($httpmask['mask_host'] !== '') {
+            $payload['hh'] = $httpmask['mask_host'];
+        }
+        if ($httpmask['multiplex'] !== 'off') {
+            $payload['hx'] = $httpmask['multiplex'];
+        }
+        if ($httpmask['path_root'] !== '') {
+            $payload['hy'] = $httpmask['path_root'];
+        }
+
+        $encoded = rtrim(strtr(base64_encode(json_encode($payload, JSON_UNESCAPED_SLASHES)), '+/', '-_'), '=');
+        return "sudoku://{$encoded}#" . self::encodeURIComponent($server['name']) . "\r\n";
+    }
+
+    private static function normalizeBool($value, $default = false)
+    {
+        if ($value === null || $value === '') return $default;
+        if (is_bool($value)) return $value;
+        if (is_numeric($value)) return ((int)$value) !== 0;
+        $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        return $parsed === null ? $default : $parsed;
+    }
+
+    private static function normalizeSudokuChoice($value, $allowed, $default)
+    {
+        $value = strtolower(trim((string)$value));
+        return in_array($value, $allowed, true) ? $value : $default;
+    }
+
+    private static function normalizeSudokuTableType($value)
+    {
+        $value = strtolower(trim((string)$value));
+        switch ($value) {
+            case 'ascii':
+                return 'prefer_ascii';
+            case 'entropy':
+                return 'prefer_entropy';
+            case 'prefer_ascii':
+            case 'prefer_entropy':
+            case 'up_ascii_down_entropy':
+            case 'up_entropy_down_ascii':
+                return $value;
+            default:
+                return 'prefer_entropy';
+        }
+    }
+
+    private static function normalizeSudokuStringList($value)
+    {
+        if (is_string($value)) {
+            $value = preg_split('/[\r\n,]+/', $value);
+        }
+        if (!is_array($value)) {
+            return [];
+        }
+        $out = [];
+        foreach ($value as $item) {
+            $item = strtolower(trim((string)$item));
+            if ($item !== '') {
+                $out[] = $item;
+            }
+        }
+        return array_values(array_unique($out));
+    }
+
+    private static function encodeSudokuAscii($value)
+    {
+        switch (self::normalizeSudokuTableType($value)) {
+            case 'prefer_ascii':
+                return 'ascii';
+            case 'prefer_entropy':
+                return 'entropy';
+            default:
+                return self::normalizeSudokuTableType($value);
+        }
+    }
+
+    private static function generateSudokuScalar()
+    {
+        do {
+            $scalar = self::sudokuScalarReduce(random_bytes(64));
+        } while (trim($scalar, "\0") === '');
+        return $scalar;
+    }
+
+    private static function sudokuScalarReduce($input)
+    {
+        $input = str_pad(substr($input, 0, 64), 64, "\0");
+        $native = self::callSodium('sodium_crypto_core_ed25519_scalar_reduce', 'crypto_core_ed25519_scalar_reduce', [$input]);
+        if ($native !== null) {
+            return $native;
+        }
+        return self::modLittleEndian($input);
+    }
+
+    private static function sudokuScalarSub($a, $b)
+    {
+        $native = self::callSodium('sodium_crypto_core_ed25519_scalar_sub', 'crypto_core_ed25519_scalar_sub', [$a, $b]);
+        if ($native !== null) {
+            return $native;
+        }
+        $aBE = strrev($a);
+        $bBE = strrev($b);
+        $order = hex2bin(self::ED25519_ORDER_HEX);
+        if (self::binaryCompareBE($aBE, $bBE) >= 0) {
+            return strrev(self::fixedBE(self::binarySubBE($aBE, $bBE), 32));
+        }
+        $sum = self::binaryAddBE($aBE, $order);
+        return strrev(self::fixedBE(self::binarySubBE($sum, $bBE), 32));
+    }
+
+    private static function sudokuScalarAdd($a, $b)
+    {
+        $native = self::callSodium('sodium_crypto_core_ed25519_scalar_add', 'crypto_core_ed25519_scalar_add', [$a, $b]);
+        if ($native !== null) {
+            return $native;
+        }
+        $order = hex2bin(self::ED25519_ORDER_HEX);
+        $sum = self::binaryAddBE(strrev($a), strrev($b));
+        if (self::binaryCompareBE($sum, $order) >= 0) {
+            $sum = self::binarySubBE($sum, $order);
+        }
+        return strrev(self::fixedBE($sum, 32));
+    }
+
+    private static function ed25519BaseNoClamp($scalar)
+    {
+        try {
+            $native = self::callSodium('sodium_crypto_scalarmult_ed25519_base_noclamp', 'crypto_scalarmult_ed25519_base_noclamp', [$scalar]);
+            return $native === null ? null : $native;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private static function callSodium($function, $compatMethod, $args)
+    {
+        if (function_exists($function)) {
+            return $function(...$args);
+        }
+        if (class_exists('\\ParagonIE_Sodium_Compat') && is_callable(['\\ParagonIE_Sodium_Compat', $compatMethod])) {
+            return call_user_func_array(['\\ParagonIE_Sodium_Compat', $compatMethod], $args);
+        }
+        return null;
+    }
+
+    private static function modLittleEndian($littleEndian)
+    {
+        $order = hex2bin(self::ED25519_ORDER_HEX);
+        $bytes = strrev($littleEndian);
+        $remainder = "\0";
+        for ($i = 0, $len = strlen($bytes); $i < $len; $i++) {
+            $remainder = self::trimBE($remainder . $bytes[$i]);
+            while (self::binaryCompareBE($remainder, $order) >= 0) {
+                $remainder = self::binarySubBE($remainder, $order);
+            }
+        }
+        return strrev(self::fixedBE($remainder, 32));
+    }
+
+    private static function trimBE($value)
+    {
+        $value = ltrim($value, "\0");
+        return $value === '' ? "\0" : $value;
+    }
+
+    private static function fixedBE($value, $length)
+    {
+        $value = self::trimBE($value);
+        if (strlen($value) > $length) {
+            $value = substr($value, -$length);
+        }
+        return str_pad($value, $length, "\0", STR_PAD_LEFT);
+    }
+
+    private static function binaryCompareBE($a, $b)
+    {
+        $a = self::trimBE($a);
+        $b = self::trimBE($b);
+        if (strlen($a) !== strlen($b)) {
+            return strlen($a) < strlen($b) ? -1 : 1;
+        }
+        return strcmp($a, $b) <=> 0;
+    }
+
+    private static function binaryAddBE($a, $b)
+    {
+        $len = max(strlen($a), strlen($b));
+        $a = str_pad($a, $len, "\0", STR_PAD_LEFT);
+        $b = str_pad($b, $len, "\0", STR_PAD_LEFT);
+        $carry = 0;
+        $out = '';
+        for ($i = $len - 1; $i >= 0; $i--) {
+            $sum = ord($a[$i]) + ord($b[$i]) + $carry;
+            $out = chr($sum & 0xff) . $out;
+            $carry = $sum >> 8;
+        }
+        if ($carry > 0) {
+            $out = chr($carry) . $out;
+        }
+        return self::trimBE($out);
+    }
+
+    private static function binarySubBE($a, $b)
+    {
+        $len = max(strlen($a), strlen($b));
+        $a = str_pad($a, $len, "\0", STR_PAD_LEFT);
+        $b = str_pad($b, $len, "\0", STR_PAD_LEFT);
+        $borrow = 0;
+        $out = '';
+        for ($i = $len - 1; $i >= 0; $i--) {
+            $diff = ord($a[$i]) - ord($b[$i]) - $borrow;
+            if ($diff < 0) {
+                $diff += 256;
+                $borrow = 1;
+            } else {
+                $borrow = 0;
+            }
+            $out = chr($diff) . $out;
+        }
+        return self::trimBE($out);
     }
 
     public static function buildNaiveV2rayNUri($uuid, $server)

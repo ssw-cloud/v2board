@@ -21,7 +21,7 @@ class V2nodeController extends Controller
             'listen_ip' => 'nullable',
             'port' => 'required',
             'server_port' => 'required',
-            'protocol' => 'required|in:shadowsocks,vmess,vless,trojan,tuic,hysteria2,anytls,naive,mieru',
+            'protocol' => 'required|in:shadowsocks,vmess,vless,trojan,tuic,hysteria2,anytls,naive,mieru,sudoku',
             'tls' => 'required|in:0,1,2',
             'tls_settings' => 'nullable|array',
             'flow' => 'nullable|in:xtls-rprx-vision',
@@ -71,7 +71,35 @@ class V2nodeController extends Controller
             $params['obfs_password'] = null;
             $params['padding_scheme'] = null;
         }
-        if ($params['protocol'] !== 'mieru' && !in_array($params['network'], ['tcp', 'ws', 'grpc', 'http', 'httpupgrade', 'xhttp'])) {
+        if ($params['protocol'] === 'sudoku') {
+            $params['tls'] = 0;
+            $params['tls_settings'] = null;
+            $params['network'] = 'tcp';
+            $params['network_settings'] = null;
+            $params['flow'] = null;
+            $params['encryption'] = null;
+            $params['encryption_settings'] = Helper::normalizeSudokuSettings($params['encryption_settings'] ?? [], true);
+            if (empty($params['encryption_settings']['master_private_key']) && empty($params['encryption_settings']['master_public_key'])) {
+                abort(422, 'Sudoku master_public_key or master_private_key is required');
+            }
+            if (!empty($params['encryption_settings']['master_private_key']) && !preg_match('/^[0-9a-f]{64}$/i', $params['encryption_settings']['master_private_key'])) {
+                abort(422, 'Invalid sudoku master_private_key');
+            }
+            if (!empty($params['encryption_settings']['master_public_key']) && !preg_match('/^[0-9a-f]{64}$/i', $params['encryption_settings']['master_public_key'])) {
+                abort(422, 'Invalid sudoku master_public_key');
+            }
+            $params['disable_sni'] = 0;
+            $params['udp_relay_mode'] = null;
+            $params['zero_rtt_handshake'] = 0;
+            $params['congestion_control'] = null;
+            $params['cipher'] = null;
+            $params['up_mbps'] = 0;
+            $params['down_mbps'] = 0;
+            $params['obfs'] = null;
+            $params['obfs_password'] = null;
+            $params['padding_scheme'] = null;
+        }
+        if (!in_array($params['protocol'], ['mieru', 'sudoku']) && !in_array($params['network'], ['tcp', 'ws', 'grpc', 'http', 'httpupgrade', 'xhttp'])) {
             abort(422, 'Invalid transport protocol');
         }
         if ($params['protocol'] === 'naive') {

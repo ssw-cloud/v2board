@@ -104856,7 +104856,28 @@
             constructor(e) {
                 super(e);
                 var t = this.props.settings;
-                "{}" !== JSON.stringify(t) && t || (t = {
+                "{}" !== JSON.stringify(t) && t || (t = "sudoku" === this.props.type ? {
+                    master_private_key: null,
+                    master_public_key: null,
+                    aead_method: "chacha20-poly1305",
+                    table_type: "prefer_entropy",
+                    padding_min: 5,
+                    padding_max: 15,
+                    custom_table: null,
+                    custom_tables: [],
+                    enable_pure_downlink: true,
+                    suspicious_action: "silent",
+                    fallback_address: "",
+                    httpmask: {
+                        disable: true,
+                        mode: "legacy",
+                        tls: false,
+                        host: "",
+                        mask_host: "",
+                        path_root: "",
+                        multiplex: "off"
+                    }
+                } : {
                     mode: "native",
                     rtt: "0rtt",
                     ticket: "600s",
@@ -104869,6 +104890,16 @@
                     encryption: this.props.encryption,
                     settings: t
                 },
+                this.props.onChange(this.state.settings)
+            }
+            changeHTTPMask(e, t) {
+                var n = this.state.settings;
+                n.httpmask = n.httpmask || {},
+                n.httpmask[e] = t,
+                "mask_host" === e && (n.httpmask.host = t),
+                this.setState({
+                    settings: n
+                }),
                 this.props.onChange(this.state.settings)
             }
             change(e, t) {
@@ -104889,6 +104920,76 @@
                   , pv = e.private_key
                   , pwd = e.password
                   , encryption = this.props.encryption;
+                if ("sudoku" === this.props.type) {
+                    var hm = e.httpmask || {}
+                      , cts = Array.isArray(e.custom_tables) ? e.custom_tables.join("\n") : e.custom_tables
+                      , input = (label,value,key,placeholder)=>y.a.createElement("div", {
+                        className: "form-group"
+                    }, y.a.createElement("label", null, label), y.a.createElement(s["a"], {
+                        value: value,
+                        onChange: e=>this.change(key, e.target.value),
+                        placeholder: placeholder || ""
+                    }))
+                      , inputCol = (label,value,key,placeholder)=>y.a.createElement("div", {
+                        className: "form-group col-md-6 col-xs-12"
+                    }, y.a.createElement("label", null, label), y.a.createElement(s["a"], {
+                        value: value,
+                        onChange: e=>this.change(key, e.target.value),
+                        placeholder: placeholder || ""
+                    }))
+                      , select = (label,value,key,options)=>y.a.createElement("div", {
+                        className: "form-group col-md-6 col-xs-12"
+                    }, y.a.createElement("label", null, label), y.a.createElement(N["a"], {
+                        value: value,
+                        style: {
+                            width: "100%"
+                        },
+                        onChange: e=>this.change(key, e)
+                    }, options.map((e,t)=>y.a.createElement(N["a"].Option, {
+                        key: t,
+                        value: e[0]
+                    }, e[1]))))
+                      , maskSelect = (label,value,key,options)=>y.a.createElement("div", {
+                        className: "form-group col-md-4 col-xs-12"
+                    }, y.a.createElement("label", null, label), y.a.createElement(N["a"], {
+                        value: value,
+                        style: {
+                            width: "100%"
+                        },
+                        onChange: e=>this.changeHTTPMask(key, e)
+                    }, options.map((e,t)=>y.a.createElement(N["a"].Option, {
+                        key: t,
+                        value: e[0]
+                    }, e[1]))))
+                      , maskInput = (label,value,key,placeholder)=>y.a.createElement("div", {
+                        className: "form-group col-md-4 col-xs-12"
+                    }, y.a.createElement("label", null, label), y.a.createElement(s["a"], {
+                        value: value,
+                        onChange: e=>this.changeHTTPMask(key, e.target.value),
+                        placeholder: placeholder || ""
+                    }));
+                    return y.a.createElement(y.a.Fragment, null, y.a.createElement("div", null,
+                    input("Master Private Key", e.master_private_key, "master_private_key", "\u7559\u7a7a\u670d\u52a1\u7aef\u81ea\u52a8\u751f\u6210"),
+                    input("Master Public Key", e.master_public_key, "master_public_key", "\u7559\u7a7a\u670d\u52a1\u7aef\u81ea\u52a8\u6062\u590d"),
+                    y.a.createElement("div", {
+                        className: "row"
+                    }, select("AEAD Method", e.aead_method || e.aead || "chacha20-poly1305", "aead_method", [["chacha20-poly1305", "chacha20-poly1305"], ["aes-128-gcm", "aes-128-gcm"], ["none", "none"]]), select("Table Type", e.table_type || e.ascii || "prefer_entropy", "table_type", [["prefer_entropy", "prefer_entropy"], ["prefer_ascii", "prefer_ascii"], ["up_ascii_down_entropy", "up_ascii_down_entropy"], ["up_entropy_down_ascii", "up_entropy_down_ascii"]])),
+                    y.a.createElement("div", {
+                        className: "row"
+                    }, inputCol("Padding Min", null != e.padding_min ? e.padding_min : 5, "padding_min", "5"), inputCol("Padding Max", null != e.padding_max ? e.padding_max : 15, "padding_max", "15")),
+                    input("Custom Table", e.custom_table, "custom_table", "xpxvvpvv"),
+                    input("Custom Tables", cts, "custom_tables", "\u8f93\u5165 x/v/p \u5e03\u5c40\u540e\u56de\u8f66"),
+                    y.a.createElement("div", {
+                        className: "row"
+                    }, select("Pure Downlink", false === e.enable_pure_downlink ? false : true, "enable_pure_downlink", [[true, "\u5f00\u542f"], [false, "\u5173\u95ed"]]), select("Suspicious Action", e.suspicious_action || "silent", "suspicious_action", [["silent", "silent"], ["fallback", "fallback"]])),
+                    input("Fallback Address", e.fallback_address, "fallback_address", "127.0.0.1:80"),
+                    y.a.createElement("div", {
+                        className: "row"
+                    }, maskSelect("HTTPMask Disable", void 0 === hm.disable ? true : hm.disable, "disable", [[true, "\u662f"], [false, "\u5426"]]), maskSelect("HTTPMask Mode", hm.mode || "legacy", "mode", [["legacy", "legacy"], ["stream", "stream"], ["poll", "poll"], ["auto", "auto"], ["ws", "ws"]]), maskSelect("HTTPMask TLS", true === hm.tls, "tls", [[false, "\u5173\u95ed"], [true, "\u5f00\u542f"]])),
+                    y.a.createElement("div", {
+                        className: "row"
+                    }, maskInput("Mask Host", hm.mask_host || hm["mask-host"] || hm.host || "", "mask_host", "example.com"), maskInput("Path Root", hm.path_root || hm["path-root"] || "", "path_root", "aabbcc"), maskSelect("Multiplex", hm.multiplex || "off", "multiplex", [["off", "off"], ["auto", "auto"], ["on", "on"]]))))
+                }
                 return y.a.createElement(y.a.Fragment, null, y.a.createElement("div", null, y.a.createElement("div", {
                     className: "form-group"
                 }, y.a.createElement("label", null, "Mode"), y.a.createElement(N["a"], {
@@ -106119,6 +106220,7 @@
                 case "encryption_settings":
                     return y.a.createElement(EncryptionSettings, {
                         settings: enc,
+                        type: e.protocol,
                         onChange: e=>this.changeServer("encryption_settings", e)
                     })
                 case "padding_scheme":
@@ -106161,7 +106263,37 @@
                 }
             }
             formChange(e, t) {
-                if (e === "protocol" && t === "mieru") {
+                if (e === "protocol" && t === "sudoku") {
+                    this.setState({
+                        server: I()({}, this.state.server, {
+                            protocol: t,
+                            tls: 0,
+                            network: "tcp",
+                            encryption_settings: {
+                                master_private_key: null,
+                                master_public_key: null,
+                                aead_method: "chacha20-poly1305",
+                                table_type: "prefer_entropy",
+                                padding_min: 5,
+                                padding_max: 15,
+                                custom_table: null,
+                                custom_tables: [],
+                                enable_pure_downlink: true,
+                                suspicious_action: "silent",
+                                fallback_address: "",
+                                httpmask: {
+                                    disable: true,
+                                    mode: "legacy",
+                                    tls: false,
+                                    host: "",
+                                    mask_host: "",
+                                    path_root: "",
+                                    multiplex: "off"
+                                }
+                            }
+                        })
+                    });
+                } else if (e === "protocol" && t === "mieru") {
                     this.setState({
                         server: I()({}, this.state.server, {
                             protocol: t,
@@ -106334,7 +106466,10 @@
                 }, "Naive"), y.a.createElement(N["a"].Option, {
                     key: 8,
                     value: "mieru"
-                }, "Mieru"))), e.protocol != null && e.protocol != "shadowsocks" && e.protocol != "mieru" && y.a.createElement("div", {
+                }, "Mieru"), y.a.createElement(N["a"].Option, {
+                    key: 9,
+                    value: "sudoku"
+                }, "Sudoku"))), e.protocol != null && e.protocol != "shadowsocks" && e.protocol != "mieru" && e.protocol != "sudoku" && y.a.createElement("div", {
                     className: "form-group col-md-6 col-xs-12"
                 }, y.a.createElement("label", null, "\u5b89\u5168\u6027 ", (parseInt(e.tls) != 0 || e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic" || e.protocol == "naive") && y.a.createElement("a", {
                     href: "javascript:void(0);",
@@ -106387,7 +106522,14 @@
                     value: "tcp"
                 }, "TCP"), y.a.createElement(N["a"].Option, {
                     value: "udp"
-                }, "UDP")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && e.protocol != "naive" && e.protocol != "mieru" && y.a.createElement("div", {
+                }, "UDP")))), e.protocol == "sudoku" && y.a.createElement("div", {
+                    className: "row"
+                }, y.a.createElement("div", {
+                    className: "form-group col-md-12 col-xs-12"
+                }, y.a.createElement("label", null, y.a.createElement("a", {
+                    href: "javascript:void(0);",
+                    onClick: ()=>this.showChildDrawer("\u7f16\u8f91Sudoku\u914d\u7f6e", "encryption_settings")
+                }, "\u7f16\u8f91Sudoku\u914d\u7f6e")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && e.protocol != "naive" && e.protocol != "mieru" && e.protocol != "sudoku" && y.a.createElement("div", {
                     className: "row"
                 }, y.a.createElement("div", {
                     className: "form-group col-md-12 col-xs-12"

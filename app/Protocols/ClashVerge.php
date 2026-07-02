@@ -66,6 +66,13 @@ class ClashVerge
                     $proxy[] = self::buildMieru($user['uuid'], $item);
                     $proxies[] = $item['name'];
                     break;
+                case 'sudoku':
+                    $sudokuConfig = Helper::buildSudokuClashProxy($user, $item);
+                    if ($sudokuConfig) {
+                        $proxy[] = $sudokuConfig;
+                        $proxies[] = $item['name'];
+                    }
+                    break;
                 case 'hysteria':
                     $proxy[] = self::buildHysteria($user['uuid'], $item);
                     $proxies[] = $item['name'];

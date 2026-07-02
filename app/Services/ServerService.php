@@ -408,6 +408,13 @@ class ServerService
                     $nodeId,
                     $apiKeyArg
                 );
+            } elseif (($v['protocol'] ?? null) === 'sudoku') {
+                $servers[$k]['install_command'] = sprintf(
+                    'bash <(curl -fsSL https://raw.githubusercontent.com/ssw-cloud/v2sudoku/main/script/install.sh) --api-host %s --node-id %d --api-key %s',
+                    $apiHostArg,
+                    $nodeId,
+                    $apiKeyArg
+                );
             } else {
                 $servers[$k]['install_command'] = sprintf(
                     'wget -N https://raw.githubusercontent.com/wyx2685/v2node/master/script/install.sh && bash install.sh --api-host %s --node-id %d --api-key %s',
