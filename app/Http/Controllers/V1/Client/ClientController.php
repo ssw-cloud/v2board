@@ -18,8 +18,10 @@ class ClientController extends Controller
     public function subscribe(Request $request)
     {
         $requestedFlag = $request->input('flag');
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
         $flag = $requestedFlag
-            ?? ($_SERVER['HTTP_USER_AGENT'] ?? '');
+            ?? $userAgent;
+        $flag = $this->normalizeClashFlag($flag, $userAgent, $requestedFlag);
         $flag = strtolower($flag);
         $user = $request->user;
         // account not expired and is not banned.
@@ -58,6 +60,31 @@ class ClientController extends Controller
             $class = new General($user, $servers);
             return $class->handle();
         }
+    }
+
+    private function normalizeClashFlag($flag, $userAgent, $requestedFlag)
+    {
+        if (!$requestedFlag) {
+            return $flag;
+        }
+
+        $flag = strtolower((string)$flag);
+        $userAgent = strtolower((string)$userAgent);
+        if ($flag !== 'clash') {
+            return $flag;
+        }
+
+        if (strpos($userAgent, 'verge') !== false) {
+            return 'verge';
+        }
+        if (strpos($userAgent, 'nyanpasu') !== false) {
+            return 'nyanpasu';
+        }
+        if (strpos($userAgent, 'mihomo') !== false || strpos($userAgent, 'clash.meta') !== false || strpos($userAgent, 'clash meta') !== false) {
+            return 'meta';
+        }
+
+        return $flag;
     }
 
     private function setSubscribeInfoToServers(&$servers, $user)
