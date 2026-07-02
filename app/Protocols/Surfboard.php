@@ -95,6 +95,12 @@ class Surfboard
 
     public static function buildShadowsocks($password, $server)
     {
+        $length = Helper::getShadowsocks2022KeyLength($server['cipher']);
+        if ($length) {
+            $serverKey = Helper::getServerKey($server['created_at'], $length);
+            $userKey = Helper::uuidToBase64($password, $length);
+            $password = "{$serverKey}:{$userKey}";
+        }
         $config = [
             "{$server['name']}=ss",
             "{$server['host']}",

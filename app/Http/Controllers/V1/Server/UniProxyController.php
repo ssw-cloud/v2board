@@ -216,11 +216,9 @@ class UniProxyController extends Controller
                     'obfs_settings' => $this->nodeInfo->obfs_settings
                 ];
 
-                if ($this->nodeInfo->cipher === '2022-blake3-aes-128-gcm') {
-                    $response['server_key'] = Helper::getServerKey($this->nodeInfo->created_at, 16);
-                }
-                if ($this->nodeInfo->cipher === '2022-blake3-aes-256-gcm') {
-                    $response['server_key'] = Helper::getServerKey($this->nodeInfo->created_at, 32);
+                $serverKeyLength = Helper::getShadowsocks2022KeyLength($this->nodeInfo->cipher);
+                if ($serverKeyLength) {
+                    $response['server_key'] = Helper::getServerKey($this->nodeInfo->created_at, $serverKeyLength);
                 }
                 break;
             case 'vmess':

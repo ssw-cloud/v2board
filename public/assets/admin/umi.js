@@ -28294,7 +28294,9 @@
                     value: "2022-blake3-aes-128-gcm"
                 }, "2022-blake3-aes-128-gcm"), h.a.createElement(a["a"].Option, {
                     value: "2022-blake3-aes-256-gcm"
-                }, "2022-blake3-aes-256-gcm"))), h.a.createElement("div", {
+                }, "2022-blake3-aes-256-gcm"), h.a.createElement(a["a"].Option, {
+                    value: "2022-blake3-chacha20-poly1305"
+                }, "2022-blake3-chacha20-poly1305"))), h.a.createElement("div", {
                     className: "form-group"
                 }, h.a.createElement("label", null, "\u6df7\u6dc6"), h.a.createElement(a["a"], {
                     value: e.obfs || "",
@@ -106552,7 +106554,9 @@
                     value: "2022-blake3-aes-128-gcm"
                 }, "2022-blake3-aes-128-gcm"), y.a.createElement(N["a"].Option, {
                     value: "2022-blake3-aes-256-gcm"
-                }, "2022-blake3-aes-256-gcm"))), e.protocol == "vless" && y.a.createElement("div", {
+                }, "2022-blake3-aes-256-gcm"), y.a.createElement(N["a"].Option, {
+                    value: "2022-blake3-chacha20-poly1305"
+                }, "2022-blake3-chacha20-poly1305"))), e.protocol == "vless" && y.a.createElement("div", {
                     className: "row"
                 }, y.a.createElement("div", {
                     className: "form-group col-md-12 col-xs-12"
