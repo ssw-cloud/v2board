@@ -64,16 +64,8 @@ class ClientController extends Controller
 
     private function normalizeClashFlag($flag, $userAgent, $requestedFlag)
     {
-        if (!$requestedFlag) {
-            return $flag;
-        }
-
         $flag = strtolower((string)$flag);
         $userAgent = strtolower((string)$userAgent);
-        if ($flag !== 'clash') {
-            return $flag;
-        }
-
         if (strpos($userAgent, 'verge') !== false) {
             return 'verge';
         }
@@ -82,6 +74,10 @@ class ClientController extends Controller
         }
         if (strpos($userAgent, 'mihomo') !== false || strpos($userAgent, 'clash.meta') !== false || strpos($userAgent, 'clash meta') !== false) {
             return 'meta';
+        }
+
+        if (!$requestedFlag || $flag !== 'clash') {
+            return $flag;
         }
 
         return $flag;
