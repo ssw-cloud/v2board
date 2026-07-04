@@ -208,6 +208,41 @@ class UniProxyController extends Controller
     public function config(Request $request)
     {
         switch ($this->nodeType) {
+            case 'v2node':
+                $response = [
+                    'protocol' => $this->nodeInfo->protocol,
+                    'host' => $this->nodeInfo->host,
+                    'listen_ip' => $this->nodeInfo->listen_ip,
+                    'port' => $this->nodeInfo->port,
+                    'server_port' => $this->nodeInfo->server_port,
+                    'network' => $this->nodeInfo->network,
+                    'network_settings' => $this->nodeInfo->network_settings,
+                    'tls' => $this->nodeInfo->tls,
+                    'tls_settings' => $this->nodeInfo->tls_settings,
+                    'cipher' => $this->nodeInfo->cipher,
+                ];
+                $serverKeyLength = Helper::getShadowsocks2022KeyLength($this->nodeInfo->cipher);
+                if ($serverKeyLength) {
+                    $response['server_key'] = Helper::getServerKey($this->nodeInfo->created_at, $serverKeyLength);
+                }
+                break;
+            case 'shadowtls':
+                $response = [
+                    'protocol' => 'shadowtls',
+                    'host' => $this->nodeInfo->host,
+                    'listen_ip' => $this->nodeInfo->listen_ip,
+                    'port' => $this->nodeInfo->port,
+                    'server_port' => $this->nodeInfo->server_port,
+                    'network' => 'tcp',
+                    'tls' => 1,
+                    'tls_settings' => $this->nodeInfo->tls_settings,
+                    'cipher' => $this->nodeInfo->cipher,
+                ];
+                $serverKeyLength = Helper::getShadowsocks2022KeyLength($this->nodeInfo->cipher);
+                if ($serverKeyLength) {
+                    $response['server_key'] = Helper::getServerKey($this->nodeInfo->created_at, $serverKeyLength);
+                }
+                break;
             case 'shadowsocks':
                 $response = [
                     'server_port' => $this->nodeInfo->server_port,

@@ -21,7 +21,7 @@ class V2nodeController extends Controller
             'listen_ip' => 'nullable',
             'port' => 'required',
             'server_port' => 'required',
-            'protocol' => 'required|in:shadowsocks,vmess,vless,trojan,tuic,hysteria2,anytls,naive,mieru,sudoku',
+            'protocol' => 'required|in:shadowsocks,shadowtls,vmess,vless,trojan,tuic,hysteria2,anytls,naive,mieru,sudoku',
             'tls' => 'required|in:0,1,2',
             'tls_settings' => 'nullable|array',
             'flow' => 'nullable|in:xtls-rprx-vision',
@@ -99,7 +99,34 @@ class V2nodeController extends Controller
             $params['obfs_password'] = null;
             $params['padding_scheme'] = null;
         }
-        if (!in_array($params['protocol'], ['mieru', 'sudoku']) && !in_array($params['network'], ['tcp', 'ws', 'grpc', 'http', 'httpupgrade', 'xhttp'])) {
+        if ($params['protocol'] === 'shadowtls') {
+            $params['tls'] = 1;
+            $shadowtlsSettings = is_array($params['tls_settings'] ?? null) ? $params['tls_settings'] : [];
+            $params['tls_settings'] = [
+                'server_name' => $shadowtlsSettings['server_name'] ?? $shadowtlsSettings['serverName'] ?? $params['host']
+            ];
+            foreach (['handshake_server', 'handshake_port', 'strict_mode', 'wildcard_sni', 'allow_insecure'] as $shadowtlsKey) {
+                if (array_key_exists($shadowtlsKey, $shadowtlsSettings)) {
+                    $params['tls_settings'][$shadowtlsKey] = $shadowtlsSettings[$shadowtlsKey];
+                }
+            }
+            $params['network'] = 'tcp';
+            $params['network_settings'] = null;
+            $params['flow'] = null;
+            $params['encryption'] = null;
+            $params['encryption_settings'] = null;
+            $params['disable_sni'] = 0;
+            $params['udp_relay_mode'] = null;
+            $params['zero_rtt_handshake'] = 0;
+            $params['congestion_control'] = null;
+            $params['cipher'] = !empty($params['cipher']) ? $params['cipher'] : '2022-blake3-aes-128-gcm';
+            $params['up_mbps'] = 0;
+            $params['down_mbps'] = 0;
+            $params['obfs'] = null;
+            $params['obfs_password'] = null;
+            $params['padding_scheme'] = null;
+        }
+        if (!in_array($params['protocol'], ['mieru', 'sudoku', 'shadowtls']) && !in_array($params['network'], ['tcp', 'ws', 'grpc', 'http', 'httpupgrade', 'xhttp'])) {
             abort(422, 'Invalid transport protocol');
         }
         if ($params['protocol'] === 'naive') {
@@ -250,6 +277,9 @@ class V2nodeController extends Controller
 
         if($params['protocol'] == 'shadowsocks' && !isset($params['cipher'])) {
             $params['cipher'] = 'aes-128-gcm';
+        }
+        if($params['protocol'] == 'shadowtls' && empty($params['cipher'])) {
+            $params['cipher'] = '2022-blake3-aes-128-gcm';
         }
 
         if ($request->input('id')) {

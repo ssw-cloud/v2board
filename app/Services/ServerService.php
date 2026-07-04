@@ -401,6 +401,13 @@ class ServerService
                     $nodeId,
                     $apiKeyArg
                 );
+            } elseif (($v['protocol'] ?? null) === 'shadowtls') {
+                $servers[$k]['install_command'] = sprintf(
+                    'bash <(curl -fsSL https://raw.githubusercontent.com/ssw-cloud/v2stls/main/script/install.sh) --api-host %s --node-id %d --api-key %s',
+                    $apiHostArg,
+                    $nodeId,
+                    $apiKeyArg
+                );
             } elseif (($v['protocol'] ?? null) === 'mieru') {
                 $servers[$k]['install_command'] = sprintf(
                     'bash <(curl -fsSL https://raw.githubusercontent.com/ssw-cloud/v2mieru/main/script/install.sh) --api-host %s --node-id %d --api-key %s',
@@ -482,6 +489,8 @@ class ServerService
         switch ($serverType) {
             case 'v2node':
                 return ServerV2node::find($serverId);
+            case 'shadowtls':
+                return ServerV2node::where('protocol', 'shadowtls')->find($serverId);
             case 'vmess':
                 return ServerVmess::find($serverId);
             case 'shadowsocks':

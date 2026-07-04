@@ -42,6 +42,10 @@ class ClashNyanpasu
                     $proxy[] = self::buildShadowsocks($user['uuid'], $item);
                     $proxies[] = $item['name'];
                     break;
+                case 'shadowtls':
+                    $proxy[] = Helper::buildShadowtlsClashProxy($user['uuid'], $item);
+                    $proxies[] = $item['name'];
+                    break;
                 case 'vmess':
                     $proxy[] = self::buildVmess($user['uuid'], $item);
                     $proxies[] = $item['name'];

@@ -31,6 +31,16 @@ class Helper
         }
     }
 
+    public static function buildShadowsocksPassword($uuid, $server)
+    {
+        $cipher = $server['cipher'] ?? '';
+        $length = self::getShadowsocks2022KeyLength($cipher);
+        if (!$length) {
+            return $uuid;
+        }
+        return self::getServerKey($server['created_at'], $length) . ':' . self::uuidToBase64($uuid, $length);
+    }
+
     public static function guid($format = false)
     {
         if (function_exists('com_create_guid') === true) {
@@ -225,14 +235,7 @@ class Helper
     public static function buildShadowsocksUri($uuid, $server)
     {
         $cipher = $server['cipher'];
-        $length = self::getShadowsocks2022KeyLength($cipher);
-        if ($length) {
-            $serverKey = Helper::getServerKey($server['created_at'], $length);
-            $userKey = Helper::uuidToBase64($uuid, $length);
-            $password = "{$serverKey}:{$userKey}";
-        } else {
-            $password = $uuid;
-        }
+        $password = self::buildShadowsocksPassword($uuid, $server);
         $name = rawurlencode($server['name']);
         $str = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode("{$cipher}:{$password}"));
         $add = self::formatHost($server['host']);
@@ -538,6 +541,167 @@ class Helper
         $query = implode('&', $queryParts);
         $auth = rawurlencode($uuid) . ':' . rawurlencode($uuid);
         return "mierus://{$auth}@{$host}?{$query}#{$name}\r\n";
+    }
+
+    public static function buildShadowtlsUri($uuid, $server)
+    {
+        $cipher = !empty($server['cipher']) ? $server['cipher'] : '2022-blake3-aes-128-gcm';
+        $server['cipher'] = $cipher;
+        $password = self::buildShadowsocksPassword($uuid, $server);
+        $host = self::formatHost($server['host']);
+        $name = rawurlencode($server['name']);
+        $userinfo = self::base64EncodeUrlSafe("{$cipher}:{$password}@{$host}:{$server['port']}");
+        $shadowTls = self::base64EncodeUrlSafe(json_encode([
+            'version' => '3',
+            'host' => self::getShadowtlsSni($server),
+            'password' => $password
+        ], JSON_UNESCAPED_SLASHES));
+
+        return "ss://{$userinfo}?shadow-tls={$shadowTls}#{$name}\r\n";
+    }
+
+    public static function buildShadowtlsClashProxy($uuid, $server)
+    {
+        $cipher = !empty($server['cipher']) ? $server['cipher'] : '2022-blake3-aes-128-gcm';
+        $server['cipher'] = $cipher;
+        $password = self::buildShadowsocksPassword($uuid, $server);
+        return [
+            'name' => $server['name'],
+            'type' => 'ss',
+            'server' => $server['host'],
+            'port' => (int)$server['port'],
+            'cipher' => $cipher,
+            'password' => $password,
+            'udp' => true,
+            'plugin' => 'shadow-tls',
+            'plugin-opts' => [
+                'host' => self::getShadowtlsSni($server),
+                'password' => $password,
+                'version' => 3,
+            ],
+        ];
+    }
+
+    public static function buildNekoboxShadowtlsUri($uuid, $server)
+    {
+        $payload = self::encodeNekoboxShadowtlsBean($uuid, $server);
+        return "sn://null?{$payload}\r\n";
+    }
+
+    public static function getShadowtlsSni($server)
+    {
+        $tlsSettings = $server['tls_settings'] ?? [];
+        return $tlsSettings['server_name'] ?? $tlsSettings['serverName'] ?? $server['host'];
+    }
+
+    private static function encodeNekoboxShadowtlsBean($uuid, $server)
+    {
+        $cipher = !empty($server['cipher']) ? $server['cipher'] : '2022-blake3-aes-128-gcm';
+        $server['cipher'] = $cipher;
+        $password = self::buildShadowsocksPassword($uuid, $server);
+        $tlsSettings = $server['tls_settings'] ?? [];
+        $bytes = '';
+        $bytes .= self::kryoWriteInt(0);
+        $bytes .= self::kryoWriteInt(4);
+        $bytes .= self::kryoWriteString($server['host']);
+        $bytes .= self::kryoWriteInt((int)$server['port']);
+        $bytes .= self::kryoWriteString('');
+        $bytes .= self::kryoWriteString(null);
+        $bytes .= self::kryoWriteString('tcp');
+        $bytes .= self::kryoWriteString('tls');
+        $bytes .= self::kryoWriteString(self::getShadowtlsSni($server));
+        $bytes .= self::kryoWriteString('');
+        $bytes .= self::kryoWriteString('');
+        $bytes .= self::kryoWriteBoolean(($tlsSettings['allow_insecure'] ?? 0) == 1);
+        $bytes .= self::kryoWriteString('');
+        $bytes .= self::kryoWriteString('');
+        $bytes .= self::kryoWriteString('');
+        $bytes .= self::kryoWriteBoolean(false);
+        $bytes .= self::kryoWriteString('');
+        $bytes .= self::kryoWriteInt(0);
+        $bytes .= self::kryoWriteBoolean(false);
+        $bytes .= self::kryoWriteBoolean(false);
+        $bytes .= self::kryoWriteInt(0);
+        $bytes .= self::kryoWriteInt(1);
+        $bytes .= self::kryoWriteInt(3);
+        $bytes .= self::kryoWriteString($password);
+        $bytes .= self::kryoWriteInt(1);
+        $bytes .= self::kryoWriteString($server['name']);
+        $bytes .= self::kryoWriteString('');
+        $bytes .= self::kryoWriteString('');
+
+        return self::base64EncodeUrlSafe(gzcompress($bytes, 9));
+    }
+
+    private static function kryoWriteInt($value)
+    {
+        return pack('V', (int)$value);
+    }
+
+    private static function kryoWriteBoolean($value)
+    {
+        return chr($value ? 1 : 0);
+    }
+
+    private static function kryoWriteString($value)
+    {
+        if ($value === null) {
+            return chr(0x80);
+        }
+        if ($value === '') {
+            return chr(0x81);
+        }
+
+        if (preg_match('/^[\x00-\x7F]{2,32}$/', $value)) {
+            $bytes = $value;
+            $last = strlen($bytes) - 1;
+            return substr($bytes, 0, $last) . chr(ord($bytes[$last]) | 0x80);
+        }
+
+        $length = self::utf16Length($value) + 1;
+        return self::kryoWriteVarIntFlag(true, $length) . $value;
+    }
+
+    private static function kryoWriteVarIntFlag($flag, $value)
+    {
+        $value = (int)$value;
+        $first = ($value & 0x3f) | ($flag ? 0x80 : 0);
+        $value >>= 6;
+        if ($value === 0) {
+            return chr($first);
+        }
+
+        $bytes = chr($first | 0x40);
+        while ($value >= 0x80) {
+            $bytes .= chr(($value & 0x7f) | 0x80);
+            $value >>= 7;
+        }
+        return $bytes . chr($value);
+    }
+
+    private static function utf16Length($value)
+    {
+        if (function_exists('mb_convert_encoding')) {
+            return (int)(strlen(mb_convert_encoding($value, 'UTF-16LE', 'UTF-8')) / 2);
+        }
+
+        preg_match_all('/./us', $value, $matches);
+        $length = 0;
+        foreach ($matches[0] as $char) {
+            $code = self::utf8Codepoint($char);
+            $length += $code > 0xffff ? 2 : 1;
+        }
+        return $length;
+    }
+
+    private static function utf8Codepoint($char)
+    {
+        $bytes = array_values(unpack('C*', $char));
+        $first = $bytes[0];
+        if ($first < 0x80) return $first;
+        if ($first < 0xe0) return (($first & 0x1f) << 6) | ($bytes[1] & 0x3f);
+        if ($first < 0xf0) return (($first & 0x0f) << 12) | (($bytes[1] & 0x3f) << 6) | ($bytes[2] & 0x3f);
+        return (($first & 0x07) << 18) | (($bytes[1] & 0x3f) << 12) | (($bytes[2] & 0x3f) << 6) | ($bytes[3] & 0x3f);
     }
 
     public static function normalizeSudokuSettings($settings, $generateMissingKey = false)

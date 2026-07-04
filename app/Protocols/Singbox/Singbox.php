@@ -55,6 +55,10 @@ class Singbox
                     $ssConfig = $this->buildShadowsocks($this->user['uuid'], $item);
                     $proxies[] = $ssConfig;
                     break;
+                case 'shadowtls':
+                    $shadowtlsConfig = $this->buildShadowTLS($this->user['uuid'], $item);
+                    array_push($proxies, ...$shadowtlsConfig);
+                    break;
                 case 'trojan':
                     $trojanConfig = $this->buildTrojan($this->user['uuid'], $item);
                     $proxies[] = $trojanConfig;
@@ -95,9 +99,12 @@ class Singbox
 
     protected function addProxies($proxies)
     {
+        $proxyTags = array_values(array_filter(array_column($proxies, 'tag'), function ($tag) {
+            return substr($tag, -10) !== '-shadowtls';
+        }));
         foreach ($this->config['outbounds'] as &$outbound) {
             if (($outbound['type'] === 'selector' && $outbound['tag'] === '节点选择') || ($outbound['type'] === 'urltest' && $outbound['tag'] === '自动选择') || ($outbound['type'] === 'selector' && strpos($outbound['tag'], '#') === 0 )) {
-                array_push($outbound['outbounds'], ...array_column($proxies, 'tag'));
+                array_push($outbound['outbounds'], ...$proxyTags);
             }
         }
         unset($outbound);
@@ -107,12 +114,7 @@ class Singbox
 
     protected function buildShadowsocks($password, $server)
     {
-        $length = Helper::getShadowsocks2022KeyLength($server['cipher']);
-        if ($length) {
-            $serverKey = Helper::getServerKey($server['created_at'], $length);
-            $userKey = Helper::uuidToBase64($password, $length);
-            $password = "{$serverKey}:{$userKey}";
-        }
+        $password = Helper::buildShadowsocksPassword($password, $server);
         $array = [];
         $array['tag'] = $server['name'];
         $array['type'] = 'shadowsocks';
@@ -143,6 +145,40 @@ class Singbox
             $array['plugin_opts'] = implode(';', $plugin_opts_parts);
         }
         return $array;
+    }
+
+    protected function buildShadowTLS($password, $server)
+    {
+        $cipher = !empty($server['cipher']) ? $server['cipher'] : '2022-blake3-aes-128-gcm';
+        $server['cipher'] = $cipher;
+        $shadowTag = $server['name'] . '-shadowtls';
+        $password = Helper::buildShadowsocksPassword($password, $server);
+        $tlsSettings = $server['tls_settings'] ?? [];
+
+        return [
+            [
+                'tag' => $shadowTag,
+                'type' => 'shadowtls',
+                'server' => $server['host'],
+                'server_port' => (int)$server['port'],
+                'version' => 3,
+                'password' => $password,
+                'domain_resolver' => 'local',
+                'tls' => [
+                    'enabled' => true,
+                    'server_name' => Helper::getShadowtlsSni($server),
+                    'insecure' => ($tlsSettings['allow_insecure'] ?? 0) == 1 ? true : false,
+                ],
+            ],
+            [
+                'tag' => $server['name'],
+                'type' => 'shadowsocks',
+                'method' => $cipher,
+                'password' => $password,
+                'network' => 'tcp',
+                'detour' => $shadowTag,
+            ],
+        ];
     }
 
 

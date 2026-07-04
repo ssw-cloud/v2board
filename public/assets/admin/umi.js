@@ -106211,6 +106211,17 @@
                         ref: "editor"
                     })));
                 case "tls_settings":
+                    if (this.state.server.protocol === "shadowtls") return y.a.createElement("div", {
+                        id: "shadowtls-settings"
+                    }, y.a.createElement("div", {
+                        className: "form-group"
+                    }, y.a.createElement("label", null, "SNI"), y.a.createElement(s["a"], {
+                        placeholder: "gateway.icloud.com",
+                        value: (ts == null ? void 0 : ts.server_name) || "",
+                        onChange: e=>this.changeServer("tls_settings", I()({}, ts, {
+                            server_name: e.target.value
+                        }))
+                    })));
                     return y.a.createElement(U, {
                         settings: ts,
                         tls: e.tls,
@@ -106299,6 +106310,18 @@
                             protocol: t,
                             tls: 0,
                             network: "tcp"
+                        })
+                    });
+                } else if (e === "protocol" && t === "shadowtls") {
+                    this.setState({
+                        server: I()({}, this.state.server, {
+                            protocol: t,
+                            tls: 1,
+                            network: "tcp",
+                            cipher: "2022-blake3-aes-128-gcm",
+                            tls_settings: I()({}, this.state.server.tls_settings, {
+                                server_name: (this.state.server.tls_settings == null ? void 0 : this.state.server.tls_settings.server_name) || this.state.server.host || ""
+                            })
                         })
                     });
                 } else if (e === "protocol" && ["anytls", "hysteria2", "trojan", "tuic", "naive"].includes(t)) {
@@ -106449,6 +106472,9 @@
                     key: 2,
                     value: "shadowsocks"
                 }, "Shadowsocks"), y.a.createElement(N["a"].Option, {
+                    key: 10,
+                    value: "shadowtls"
+                }, "ShadowTLS"), y.a.createElement(N["a"].Option, {
                     key: 3,
                     value: "trojan"
                 }, "Trojan"), y.a.createElement(N["a"].Option, {
@@ -106471,11 +106497,11 @@
                     value: "sudoku"
                 }, "Sudoku"))), e.protocol != null && e.protocol != "shadowsocks" && e.protocol != "mieru" && e.protocol != "sudoku" && y.a.createElement("div", {
                     className: "form-group col-md-6 col-xs-12"
-                }, y.a.createElement("label", null, "\u5b89\u5168\u6027 ", (parseInt(e.tls) != 0 || e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic" || e.protocol == "naive") && y.a.createElement("a", {
+                }, y.a.createElement("label", null, "\u5b89\u5168\u6027 ", (parseInt(e.tls) != 0 || e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic" || e.protocol == "naive" || e.protocol == "shadowtls") && y.a.createElement("a", {
                     href: "javascript:void(0);",
                     onClick: ()=>this.showChildDrawer("\u7f16\u8f91\u5b89\u5168\u6027\u914d\u7f6e", "tls_settings")
                 }, "\u7f16\u8f91\u914d\u7f6e")), y.a.createElement(N["a"], {
-                    value: parseInt(e.tls) || (e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic" || e.protocol == "naive" ? 1 : 0),
+                    value: parseInt(e.tls) || (e.protocol == "hysteria2" || e.protocol == "trojan" || e.protocol == "tuic" || e.protocol == "naive" || e.protocol == "shadowtls" ? 1 : 0),
                     style: {
                         width: "100%"
                     },
@@ -106529,7 +106555,7 @@
                 }, y.a.createElement("label", null, y.a.createElement("a", {
                     href: "javascript:void(0);",
                     onClick: ()=>this.showChildDrawer("\u7f16\u8f91Sudoku\u914d\u7f6e", "encryption_settings")
-                }, "\u7f16\u8f91Sudoku\u914d\u7f6e")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "tuic" && e.protocol != "naive" && e.protocol != "mieru" && e.protocol != "sudoku" && y.a.createElement("div", {
+                }, "\u7f16\u8f91Sudoku\u914d\u7f6e")))), e.protocol != null && e.protocol != "hysteria2" && e.protocol != "shadowsocks" && e.protocol != "shadowtls" && e.protocol != "tuic" && e.protocol != "naive" && e.protocol != "mieru" && e.protocol != "sudoku" && y.a.createElement("div", {
                     className: "row"
                 }, y.a.createElement("div", {
                     className: "form-group col-md-12 col-xs-12"
@@ -106676,10 +106702,10 @@
                     key: 1,
                     value: 1
                 },
-                "\u662f")))), e.protocol == "shadowsocks" && y.a.createElement("div", {
+                "\u662f")))), (e.protocol == "shadowsocks" || e.protocol == "shadowtls") && y.a.createElement("div", {
                     className: "form-group"
                 }, y.a.createElement("label", null, "\u52a0\u5bc6\u7b97\u6cd5"), y.a.createElement(N["a"], {
-                    value: e.cipher ?? "aes-128-gcm",
+                    value: e.cipher ?? (e.protocol == "shadowtls" ? "2022-blake3-aes-128-gcm" : "aes-128-gcm"),
                     onChange: e=>this.formChange("cipher", e),
                     style: {
                         width: "100%"
@@ -106989,7 +107015,7 @@
                     dataIndex: "id",
                     key: "id",
                     width: 150,
-                    filters: ["V2node", "Shadowsocks", "Vmess", "Trojan", "Hysteria", "Tuic", "Vless", "AnyTLS"].map(e=>({
+                    filters: ["V2node", "Shadowsocks", "ShadowTLS", "Vmess", "Trojan", "Hysteria", "Tuic", "Vless", "AnyTLS"].map(e=>({
                         text: e,
                         value: e
                     })),

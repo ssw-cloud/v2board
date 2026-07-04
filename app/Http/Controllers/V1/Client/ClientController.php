@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1\Client;
 
 use App\Http\Controllers\Controller;
 use App\Protocols\General;
+use App\Protocols\Nekobox;
 use App\Protocols\Mieru;
 use App\Protocols\Singbox\Singbox;
 use App\Protocols\Singbox\SingboxOld;
@@ -29,8 +30,8 @@ class ClientController extends Controller
         if ($userService->isAvailable($user)) {
             $serverService = new ServerService();
             $servers = $serverService->getAvailableServers($user);
-            if (!$requestedFlag && strpos($flag, 'nekobox') !== false) {
-                $class = new General($user, $servers);
+            if (strpos($flag, 'nekobox') !== false) {
+                $class = new Nekobox($user, $servers);
                 return $class->handle();
             }
             if($flag) {
