@@ -22,6 +22,9 @@ class V2rayN
         $uri = '';
 
         foreach ($this->servers as $server) {
+            if (($server['type'] ?? null) === 'v2node' && ($server['protocol'] ?? null) === 'shadowtls') {
+                continue;
+            }
             if (($server['type'] ?? null) === 'v2node' && ($server['protocol'] ?? null) === 'naive') {
                 $uri .= Helper::buildNaiveV2rayNUri($this->user['uuid'], $server);
             } else {
