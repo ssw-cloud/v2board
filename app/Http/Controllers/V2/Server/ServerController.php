@@ -59,6 +59,7 @@ class ServerController extends Controller
             'server_port' => $this->nodeInfo->server_port,
             'network' => $this->nodeInfo->network,
             'network_settings' => $this->nodeInfo->network_settings,
+            'trusted_x_forwarded_for'=> $this->nodeInfo->trusted_x_forwarded_for,
             'protocol' => $this->nodeInfo->protocol,
             'tls' => $this->nodeInfo->tls,
             'tls_settings' => $this->formatTlsSettingsForNode($this->nodeInfo->tls_settings),
